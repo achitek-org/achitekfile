@@ -1,0 +1,65 @@
+blueprint {
+  version = "1.0.0"
+  name = "web-app"
+  description = "Full-stack web application"
+}
+
+prompt "app_name" {
+  type = string
+  help = "Application name"
+
+  validate {
+    regex = "^[a-z][a-z0-9-]*$"
+    min_length = 2
+  }
+}
+
+prompt "framework" {
+  type = select
+  help = "Choose web framework"
+  choices = ["axum", "actix-web", "rocket", "warp",]
+  default = "axum"
+}
+
+prompt "database" {
+  type = select
+  help = "Choose database"
+  choices = ["postgres", "mysql", "sqlite", "none"]
+  default = "postgres"
+}
+
+prompt "orm" {
+  type = select
+  help = "Choose ORM/query builder"
+  choices = ["diesel", "sea-orm", "sqlx"]
+  default = "sqlx"
+  depends_on = database != "none"
+}
+
+prompt "features" {
+  type = multiselect
+  help = "Additional features"
+  choices = ["auth", "api", "admin", "websockets"]
+  required = false
+}
+
+prompt "auth_method" {
+  type = select
+  help = "Authentication method"
+  choices = ["jwt", "session", "oauth"]
+  default = "jwt"
+  depends_on = features.contains("auth")
+}
+
+prompt "advanced_config" {
+  type = paragraph
+  help = "Advanced settings"
+  depends_on = all(
+  features.contains("api"),
+  any(
+  framework == "axum",
+  framework == "rocket",
+  ),
+  )
+}
+
