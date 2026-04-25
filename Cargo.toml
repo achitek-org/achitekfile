@@ -6,4 +6,4 @@ edition = "2024"
 [dependencies]
 thiserror = "2.0.18"
 tree-sitter = "0.26.8"
-tree-sitter-achitekfile = { git = "https://github.com/achitek-org/tree-sitter-achitek", rev = "877c24d" }
+tree-sitter-achitekfile = "0.1.0"

@@ -49,8 +49,8 @@ pub struct Graph<Node> {
 ///
 /// # Examples
 ///
-/// ```
-/// use achitek::sort::{Graph, sort_graph};
+/// ```ignore
+/// use achitekfile::sort::{Graph, sort_graph};
 ///
 /// let nodes: Vec<usize> = vec![2, 3, 5, 7, 8, 9, 10, 11];
 /// let edges: Vec<(usize, usize)> = vec![

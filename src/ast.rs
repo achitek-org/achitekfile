@@ -193,8 +193,8 @@ impl<'a> AchitekAst<'a> {
     }
     /// Returns prompts in dependency order.
     ///
-    /// This method first calls [`Self::fetch_prompts`] to parse all prompt
-    /// blocks, then converts their dependency expressions into a graph:
+    /// This method first parses all prompt blocks, then converts their dependency
+    /// expressions into a graph:
     ///
     /// ```text
     /// dependency prompt -> prompt that depends on it
@@ -273,15 +273,6 @@ impl<'a> AchitekAst<'a> {
             .collect()
     }
 
-    /// Returns a clone of the underlying Tree-sitter tree.
-    ///
-    /// Use this when a caller needs low-level Tree-sitter operations, such as
-    /// inspecting node byte ranges or running custom queries. For semantic
-    /// prompt data, prefer [`Self::fetch_prompts`] or [`Self::ordered_prompts`].
-    pub fn ast(&self) -> Tree {
-        self.ast.clone()
-    }
-
     /// Extracts all prompt blocks from the syntax tree.
     ///
     /// This method uses a Tree-sitter query to find every `prompt_block` with a
@@ -293,7 +284,7 @@ impl<'a> AchitekAst<'a> {
     ///
     /// Returns an error if the query cannot be compiled or if any prompt block
     /// contains malformed or unsupported syntax.
-    pub fn fetch_prompts(&self) -> Result<Vec<Prompt>, AstError> {
+    fn fetch_prompts(&self) -> Result<Vec<Prompt>, AstError> {
         let root = self.ast.root_node();
         let query = Query::new(
             &self.language,

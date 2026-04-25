@@ -24,8 +24,8 @@ use tree_sitter::Parser;
 /// }
 /// "#;
 ///
-/// let ast = achitek::from_str(source)?;
-/// let prompts = ast.fetch_prompts()?;
+/// let ast = achitekfile::from_str(source)?;
+/// let prompts = ast.ordered_prompts()?;
 ///
 /// assert_eq!(prompts[0].name, "project_name");
 /// # Ok::<(), Box<dyn std::error::Error>>(())
@@ -56,12 +56,4 @@ pub enum ParseError {
     /// Parsing was interrupted before Tree-sitter produced a tree.
     #[error("tree-sitter did not produce a parse tree")]
     ParseCancelled,
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_simple() {
-        // todo!()
-    }
 }
