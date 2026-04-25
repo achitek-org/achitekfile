@@ -2,6 +2,7 @@
 name = "achitekfile"
 description = "A tree-sitter backed semantic parser for the Achitekfile DSL"
 repository = "https://github.com/achitek-org/achitekfile"
+license = "MIT"
 version = "0.1.0"
 edition = "2024"
 
