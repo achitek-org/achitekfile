@@ -36,15 +36,19 @@ use tree_sitter::Parser;
 /// Returns [`ParseError::Language`] if the parser cannot be configured with the
 /// Achitek grammar, or [`ParseError::ParseCancelled`] if Tree-sitter does not
 /// produce a tree.
-pub fn from_str(content: &str) -> Result<AchitekAst<'_>, ParseError> {
+pub fn from_str(source: &str) -> Result<AchitekAst<'_>, ParseError> {
     let mut parser = Parser::new();
     let language = tree_sitter_achitekfile::LANGUAGE.into();
     parser.set_language(&language)?;
     let ast = parser
-        .parse(content, None)
+        .parse(source, None)
         .ok_or(ParseError::ParseCancelled)?;
 
-    Ok(AchitekAst::new(ast, language, content))
+    Ok(AchitekAst {
+        ast,
+        language,
+        source,
+    })
 }
 
 /// Errors that can occur while parsing source text into an [`AchitekAst`].
