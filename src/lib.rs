@@ -39,5 +39,7 @@ mod sort;
 pub use ast::{
     AchitekAst, AstError, ComparisonOperator, Dependency, Prompt, PromptType, Validation, Value,
 };
-pub use diagnostics::Diagnostic;
+pub use diagnostics::{
+    Diagnostic, DiagnosticCode, DiagnosticKind, Severity, TextPosition, TextRange,
+};
 pub use parser::{ParseError, from_str};

@@ -44,11 +44,7 @@ pub fn from_str(source: &str) -> Result<AchitekAst<'_>, ParseError> {
         .parse(source, None)
         .ok_or(ParseError::ParseCancelled)?;
 
-    Ok(AchitekAst {
-        ast,
-        language,
-        source,
-    })
+    Ok(AchitekAst::new(ast, language, source))
 }
 
 /// Errors that can occur while parsing source text into an [`AchitekAst`].

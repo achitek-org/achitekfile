@@ -99,12 +99,12 @@ impl Diagnostic {
         self.severity
     }
     /// Getter for message field
-    pub fn message(&self) -> String {
-        self.message.clone()
+    pub fn message(&self) -> &str {
+        &self.message
     }
     /// Getter for help field
-    pub fn help(&self) -> Option<String> {
-        self.help.clone()
+    pub fn help(&self) -> Option<&str> {
+        self.help.as_deref()
     }
     /// Getter for range field
     pub fn range(&self) -> TextRange {
@@ -174,6 +174,7 @@ pub enum DiagnosticCode {
     MalformedArray,
 }
 impl DiagnosticCode {
+    /// Returns the broad diagnostic category for this code.
     pub fn kind(&self) -> DiagnosticKind {
         match self {
             Self::MissingBlueprintBlock => DiagnosticKind::Syntax,

@@ -172,15 +172,25 @@ pub struct Validation {
 /// Most callers should construct this through [`crate::from_str`] instead of
 /// calling [`AchitekAst::new`] directly.
 pub struct AchitekAst<'a> {
-    /// T
-    pub language: Language,
-    /// T
-    pub source: &'a str,
-    /// T
-    pub ast: Tree,
+    language: Language,
+    source: &'a str,
+    ast: Tree,
 }
 
 impl<'a> AchitekAst<'a> {
+    /// Creates an AST wrapper from a parsed Tree-sitter tree.
+    ///
+    /// This is primarily used by [`crate::from_str`]. The `source` must be the
+    /// exact text that produced `ast`; Tree-sitter nodes store byte ranges into
+    /// that text, and parsing helpers use those ranges to recover strings,
+    /// identifiers, integers, and operators.
+    pub fn new(ast: Tree, language: Language, source: &'a str) -> Self {
+        Self {
+            ast,
+            language,
+            source,
+        }
+    }
     /// Returns prompts in dependency order.
     ///
     /// This method first parses all prompt blocks, then converts their dependency
