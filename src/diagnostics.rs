@@ -102,6 +102,17 @@ pub struct Diagnostic {
     range: TextRange,
 }
 impl Diagnostic {
+    /// Creates a diagnostic from a code and source range.
+    pub(crate) fn new(code: DiagnosticCode, range: TextRange) -> Self {
+        Self {
+            code,
+            severity: code.severity(),
+            message: code.message().to_owned(),
+            help: code.help().map(str::to_owned),
+            range,
+        }
+    }
+
     /// Getter for code field
     pub fn code(&self) -> DiagnosticCode {
         self.code
@@ -249,6 +260,70 @@ impl DiagnosticCode {
             Self::MalformedArray => "ACH0015",
         }
     }
+
+    /// Returns the default message for this diagnostic code.
+    pub fn message(&self) -> &'static str {
+        match self {
+            Self::MissingBlueprintBlock => "missing blueprint block",
+            Self::MultipleBlueprintBlocks => "multiple blueprint blocks",
+            Self::PromptBeforeBlueprint => "prompt block appears before blueprint block",
+            Self::UnknownTopLevelItem => "unknown top-level item",
+            Self::UnknownBlueprintAttribute => "unknown blueprint attribute",
+            Self::UnknownPromptAttribute => "unknown prompt attribute",
+            Self::UnknownValidateAttribute => "unknown validate attribute",
+            Self::UnknownPromptType => "unknown prompt type",
+            Self::InvalidBooleanLiteral => "invalid boolean literal",
+            Self::UnterminatedString => "unterminated string literal",
+            Self::InvalidEscapeSequence => "invalid escape sequence",
+            Self::InvalidDependencyExpression => "invalid dependency expression",
+            Self::UnknownDependencyMethod => "unknown dependency method",
+            Self::InvalidIdentifier => "invalid identifier",
+            Self::InvalidInteger => "invalid integer literal",
+            Self::MalformedArray => "malformed array literal",
+        }
+    }
+
+    /// Returns default help text for this diagnostic code.
+    pub fn help(&self) -> Option<&'static str> {
+        match self {
+            Self::MissingBlueprintBlock => Some("Start the file with a `blueprint { ... }` block."),
+            Self::MultipleBlueprintBlocks => {
+                Some("Keep exactly one `blueprint` block in each Achitekfile.")
+            }
+            Self::PromptBeforeBlueprint => {
+                Some("Move the `blueprint` block before all `prompt` blocks.")
+            }
+            Self::UnknownTopLevelItem => {
+                Some("Only `blueprint` and `prompt` blocks are valid at the top level.")
+            }
+            Self::UnknownBlueprintAttribute => Some(
+                "Use one of `version`, `name`, `description`, `author`, or `min_achitek_version`.",
+            ),
+            Self::UnknownPromptAttribute => Some(
+                "Use one of `type`, `help`, `choices`, `default`, `required`, `depends_on`, or `validate`.",
+            ),
+            Self::UnknownValidateAttribute => Some(
+                "Use one of `regex`, `min_length`, `max_length`, `min_selections`, or `max_selections`.",
+            ),
+            Self::UnknownPromptType => {
+                Some("Use one of `string`, `paragraph`, `bool`, `select`, or `multiselect`.")
+            }
+            Self::InvalidBooleanLiteral => Some("Use `true` or `false`."),
+            Self::UnterminatedString => Some("Close the string with `\"`."),
+            Self::InvalidEscapeSequence => {
+                Some("Supported escapes are `\\n`, `\\t`, `\\r`, `\\\"`, and `\\\\`.")
+            }
+            Self::InvalidDependencyExpression => Some(
+                "Use a prompt reference, comparison, `contains(...)`, `all(...)`, or `any(...)`.",
+            ),
+            Self::UnknownDependencyMethod => Some("The only supported method is `contains`."),
+            Self::InvalidIdentifier => Some(
+                "Identifiers must start with a letter and contain only letters, digits, or `_`.",
+            ),
+            Self::InvalidInteger => Some("Use a non-negative integer such as `1` or `42`."),
+            Self::MalformedArray => Some("Use `[value, value]` with comma-separated values."),
+        }
+    }
 }
 
 /// Severity level for an Achitekfile diagnostic.
@@ -256,7 +331,7 @@ impl DiagnosticCode {
 /// Severity indicates how tools should present a diagnostic. Errors describe
 /// invalid source that should prevent normal execution. Warnings describe
 /// suspicious but still analyzable source. Hints provide low-priority guidance.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Severity {
     /// Invalid source that should prevent normal execution.
     Error,

@@ -169,8 +169,8 @@ pub struct Validation {
 /// - the original source text used to extract node text,
 /// - the parsed [`Tree`] itself.
 ///
-/// Most callers should construct this through [`crate::from_str`] instead of
-/// calling [`AchitekAst::new`] directly.
+/// Most callers should prefer [`crate::analyze`] instead of constructing this
+/// wrapper directly.
 pub struct AchitekAst<'a> {
     language: Language,
     source: &'a str,
@@ -180,7 +180,7 @@ pub struct AchitekAst<'a> {
 impl<'a> AchitekAst<'a> {
     /// Creates an AST wrapper from a parsed Tree-sitter tree.
     ///
-    /// This is primarily used by [`crate::from_str`]. The `source` must be the
+    /// The `source` must be the
     /// exact text that produced `ast`; Tree-sitter nodes store byte ranges into
     /// that text, and parsing helpers use those ranges to recover strings,
     /// identifiers, integers, and operators.
@@ -582,11 +582,20 @@ fn named_children(node: Node<'_>) -> std::vec::IntoIter<Node<'_>> {
 #[cfg(test)]
 mod test {
     use super::{Dependency, PromptType};
-    use crate::from_str;
+    use crate::{AchitekAst, from_str};
+    use indoc::indoc;
+    use tree_sitter::Language;
+
+    fn ast_from_str(source: &str) -> AchitekAst<'_> {
+        let tree = from_str(source).expect("Expected to create parse tree");
+        let language: Language = tree_sitter_achitekfile::LANGUAGE.into();
+
+        AchitekAst::new(tree, language, source)
+    }
 
     #[test]
     fn test_query_all_prompts() {
-        let source = r#"
+        let source = indoc! {r#"
             blueprint {
               version = "1.0.0"
               name = "web-app"
@@ -602,9 +611,9 @@ mod test {
               help = "Is this a rust optimized workspace"
               depends_on = is_workspace
             }
-        "#;
+        "#};
 
-        let ast = from_str(source).expect("Expected to create AST");
+        let ast = ast_from_str(source);
 
         let prompts = ast.fetch_prompts().expect("Expected to fetch prompts");
 
@@ -628,7 +637,7 @@ mod test {
 
     #[test]
     fn test_ordered_prompts_sorts_dependencies_first() {
-        let source = r#"
+        let source = indoc! {r#"
             blueprint {
               version = "1.0.0"
               name = "web-app"
@@ -647,9 +656,9 @@ mod test {
             prompt "is_workspace" {
               type = bool
             }
-        "#;
+        "#};
 
-        let ast = from_str(source).expect("Expected to create AST");
+        let ast = ast_from_str(source);
         let prompts = ast
             .ordered_prompts()
             .expect("Expected to order prompts by dependency");
