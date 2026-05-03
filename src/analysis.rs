@@ -70,7 +70,12 @@ fn syntax_diagnostics(tree: &Tree) -> Vec<Diagnostic> {
 }
 
 fn collect_file_shape_diagnostics(root: Node<'_>, diagnostics: &mut Vec<Diagnostic>) {
-    if !named_children(root).any(|node| node.kind() == "blueprint_block") {
+    let mut cursor = root.walk();
+    let has_blueprint = root
+        .named_children(&mut cursor)
+        .any(|node| node.kind() == "blueprint_block");
+
+    if !has_blueprint {
         diagnostics.push(Diagnostic::new(
             DiagnosticCode::MissingBlueprintBlock,
             text_range_for_node(root),
@@ -140,11 +145,4 @@ fn text_position_for_point(point: Point) -> TextPosition {
         line: point.row,
         byte: point.column,
     }
-}
-
-fn named_children(node: Node<'_>) -> impl Iterator<Item = Node<'_>> {
-    let mut cursor = node.walk();
-    node.named_children(&mut cursor)
-        .collect::<Vec<_>>()
-        .into_iter()
 }
