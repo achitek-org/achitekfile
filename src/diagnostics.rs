@@ -42,6 +42,18 @@
 //! | Invalid integer | [syntax] | [error] | [ACH0014] |
 //! | Malformed array | [syntax] | [error] | [ACH0015] |
 //!
+//! ## Code stability
+//!
+//! Diagnostic codes are part of this crate's public API.
+//!
+//! - Released codes keep their meaning across compatible releases.
+//! - Do not reuse a removed code for a different diagnostic.
+//! - Prefer adding a new code when a diagnostic splits into multiple cases.
+//! - Message and help text may change over time.
+//! - Tests and downstream tools should rely on codes, not exact prose.
+//! - Code severity should remain stable unless changing it is intentional and
+//!   documented in release notes.
+//!
 //! [syntax]: DiagnosticKind::Syntax
 //! [semantic]: DiagnosticKind::Semantic
 //! [dependency]: DiagnosticKind::Dependency
@@ -193,6 +205,48 @@ impl DiagnosticCode {
             Self::InvalidIdentifier => DiagnosticKind::Syntax,
             Self::InvalidInteger => DiagnosticKind::Syntax,
             Self::MalformedArray => DiagnosticKind::Syntax,
+        }
+    }
+    /// Returns the severity of the diagnostic code
+    pub fn severity(&self) -> Severity {
+        match self {
+            Self::MissingBlueprintBlock => Severity::Error,
+            Self::MultipleBlueprintBlocks => Severity::Error,
+            Self::PromptBeforeBlueprint => Severity::Error,
+            Self::UnknownTopLevelItem => Severity::Error,
+            Self::UnknownBlueprintAttribute => Severity::Error,
+            Self::UnknownPromptAttribute => Severity::Error,
+            Self::UnknownValidateAttribute => Severity::Error,
+            Self::UnknownPromptType => Severity::Error,
+            Self::InvalidBooleanLiteral => Severity::Error,
+            Self::UnterminatedString => Severity::Error,
+            Self::InvalidEscapeSequence => Severity::Error,
+            Self::InvalidDependencyExpression => Severity::Error,
+            Self::UnknownDependencyMethod => Severity::Error,
+            Self::InvalidIdentifier => Severity::Error,
+            Self::InvalidInteger => Severity::Error,
+            Self::MalformedArray => Severity::Error,
+        }
+    }
+    /// Returns the stable machine-readable code
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::MissingBlueprintBlock => "ACH0000",
+            Self::MultipleBlueprintBlocks => "ACH0001",
+            Self::PromptBeforeBlueprint => "ACH0002",
+            Self::UnknownTopLevelItem => "ACH0003",
+            Self::UnknownBlueprintAttribute => "ACH0004",
+            Self::UnknownPromptAttribute => "ACH0005",
+            Self::UnknownValidateAttribute => "ACH0006",
+            Self::UnknownPromptType => "ACH0007",
+            Self::InvalidBooleanLiteral => "ACH0008",
+            Self::UnterminatedString => "ACH0009",
+            Self::InvalidEscapeSequence => "ACH0010",
+            Self::InvalidDependencyExpression => "ACH0011",
+            Self::UnknownDependencyMethod => "ACH0012",
+            Self::InvalidIdentifier => "ACH0013",
+            Self::InvalidInteger => "ACH0014",
+            Self::MalformedArray => "ACH0015",
         }
     }
 }
