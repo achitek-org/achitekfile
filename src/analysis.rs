@@ -107,6 +107,15 @@ fn collect_syntax_diagnostics(node: Node<'_>, diagnostics: &mut Vec<Diagnostic>)
 }
 
 fn missing_node_code(node: Node<'_>) -> DiagnosticCode {
+    match node.parent().map(|parent| parent.kind()) {
+        Some("array" | "value_list") => return DiagnosticCode::MalformedArray,
+        Some("depends_on_attribute" | "dependency_expr") => {
+            return DiagnosticCode::InvalidDependencyExpression;
+        }
+        Some("string_literal") => return DiagnosticCode::UnterminatedString,
+        _ => {}
+    }
+
     match node.kind() {
         "blueprint_block" => DiagnosticCode::MissingBlueprintBlock,
         "array" | "value_list" => DiagnosticCode::MalformedArray,
