@@ -1,9 +1,9 @@
-//! This module provides the user facing API for parsing a source
+//! This module provides the user-facing API for parsing a source
 //! achitekfile.
 //!
 //! The API is forgiving in that the exposed [`AnalysisError`]
-//! is reserved for infrastructure failures only, and If error(s)
-//! are detected they're returned as structured diagnostics.
+//! is reserved for infrastructure failures only; if errors are
+//! detected, they are returned as structured diagnostics.
 
 use super::{
     Diagnostic, DiagnosticCode, TextPosition, TextRange,
@@ -138,7 +138,7 @@ fn text_range_for_node(node: Node<'_>) -> TextRange {
 fn text_position_for_point(point: Point) -> TextPosition {
     TextPosition {
         line: point.row,
-        character: point.column,
+        byte: point.column,
     }
 }
 

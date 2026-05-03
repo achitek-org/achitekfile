@@ -341,25 +341,31 @@ pub enum Severity {
     Hint,
 }
 
-/// A zero-based position in Achitekfile source text.
+/// A zero-based byte position in Achitekfile source text.
 ///
-/// `line` and `character` are intended for editor and diagnostic reporting.
-/// They are independent of LSP types so this crate can be used by non-editor
-/// consumers such as CLI tooling.
+/// `line` and `byte` use Tree-sitter's native coordinate system: the line is
+/// zero-based and `byte` is the zero-based UTF-8 byte offset from the beginning
+/// of that line.
+///
+/// This type is independent of LSP positions. Language-server consumers should
+/// convert `byte` into the negotiated LSP position encoding before publishing
+/// diagnostics or other ranges to an editor.
 #[derive(Debug, Clone, Copy)]
 pub struct TextPosition {
     /// Zero-based line number.
     pub line: usize,
 
-    /// Zero-based character offset within the line.
-    pub character: usize,
+    /// Zero-based UTF-8 byte offset within the line.
+    pub byte: usize,
 }
 
-/// A source range in Achitekfile text.
+/// A byte range in Achitekfile source text.
 ///
-/// The range starts at `start` and ends at `end`. Consumers can use this to
-/// highlight diagnostics, symbols, prompt names, attributes, and other source
-/// elements.
+/// The range starts at `start` and ends at `end`, both expressed as zero-based
+/// line plus UTF-8 byte offset positions. Consumers can use this to highlight
+/// diagnostics, symbols, prompt names, attributes, and other source elements
+/// after converting into their presentation protocol's expected position
+/// encoding.
 #[derive(Debug, Clone, Copy)]
 pub struct TextRange {
     /// Start position of the range.
