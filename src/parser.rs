@@ -1,15 +1,15 @@
-use crate::AchitekAst;
 use thiserror::Error;
-use tree_sitter::Parser;
+use tree_sitter::{Language, Parser, Tree};
 
-/// Parses Achitekfile source text into an [`AchitekAst`].
+/// Parses Achitekfile source text into a Tree-sitter [`Tree`].
+///
+/// This is a low level API that you generally shouldn't need to use.
 ///
 /// This function configures a Tree-sitter parser with the Achitekfile grammar,
-/// parses the supplied source, and returns an AST wrapper that keeps the source
-/// text available for later node-to-text conversion.
+/// parses the supplied source, and returns the raw Tree-sitter parse tree.
 ///
-/// The returned AST can be used directly for low-level Tree-sitter access or
-/// for higher-level semantic operations:
+/// Prefer [`crate::analyze`] unless you specifically need low-level
+/// Tree-sitter access.
 ///
 /// ```
 /// let source = r#"
@@ -24,10 +24,9 @@ use tree_sitter::Parser;
 /// }
 /// "#;
 ///
-/// let ast = achitekfile::from_str(source)?;
-/// let prompts = ast.ordered_prompts()?;
+/// let tree = achitekfile::from_str(source)?;
 ///
-/// assert_eq!(prompts[0].name, "project_name");
+/// assert_eq!(tree.root_node().kind(), "file");
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
@@ -36,18 +35,18 @@ use tree_sitter::Parser;
 /// Returns [`ParseError::Language`] if the parser cannot be configured with the
 /// Achitek grammar, or [`ParseError::ParseCancelled`] if Tree-sitter does not
 /// produce a tree.
-pub fn from_str(source: &str) -> Result<AchitekAst<'_>, ParseError> {
+pub fn from_str(source: &str) -> Result<Tree, ParseError> {
     let mut parser = Parser::new();
-    let language = tree_sitter_achitekfile::LANGUAGE.into();
+    let language: Language = tree_sitter_achitekfile::LANGUAGE.into();
     parser.set_language(&language)?;
-    let ast = parser
+    let ast: Tree = parser
         .parse(source, None)
         .ok_or(ParseError::ParseCancelled)?;
 
-    Ok(AchitekAst::new(ast, language, source))
+    Ok(ast)
 }
 
-/// Errors that can occur while parsing source text into an [`AchitekAst`].
+/// Errors that can occur while parsing source text into a Tree-sitter [`Tree`].
 #[derive(Debug, Error)]
 pub enum ParseError {
     /// The Achitek grammar could not be installed into the parser.
