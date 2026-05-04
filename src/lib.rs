@@ -34,6 +34,7 @@
 mod analysis;
 mod ast;
 mod diagnostics;
+pub mod model;
 mod parser;
 mod sort;
 
