@@ -132,7 +132,7 @@ fn validate_blueprint(blueprint: &Blueprint, diagnostics: &mut Vec<Diagnostic>) 
         Some(version) => version.value.clone(),
         None => {
             diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::UnknownBlueprintAttribute,
+                DiagnosticCode::MissingBlueprintVersion,
                 TextRange::default(),
                 "missing required blueprint `version` attribute",
             ));
@@ -143,7 +143,7 @@ fn validate_blueprint(blueprint: &Blueprint, diagnostics: &mut Vec<Diagnostic>) 
         Some(name) => name.value.clone(),
         None => {
             diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::UnknownBlueprintAttribute,
+                DiagnosticCode::MissingBlueprintName,
                 TextRange::default(),
                 "missing required blueprint `name` attribute",
             ));

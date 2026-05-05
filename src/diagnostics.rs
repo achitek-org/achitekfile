@@ -41,6 +41,37 @@
 //! | Invalid identifier | [syntax] | [error] | [ACH0013] |
 //! | Invalid integer | [syntax] | [error] | [ACH0014] |
 //! | Malformed array | [syntax] | [error] | [ACH0015] |
+//! | Missing blueprint version | [semantic] | [error] | [ACH1000] |
+//! | Missing blueprint name | [semantic] | [error] | [ACH1001] |
+//! | Empty blueprint name | [semantic] | [error] | [ACH1002] |
+//! | Empty blueprint version | [semantic] | [error] | [ACH1003] |
+//! | Duplicate blueprint attribute | [semantic] | [error] | [ACH1004] |
+//! | Missing prompt type | [semantic] | [error] | [ACH1005] |
+//! | Empty prompt name | [semantic] | [error] | [ACH1006] |
+//! | Duplicate prompt name | [semantic] | [error] | [ACH1007] |
+//! | Duplicate prompt attribute | [semantic] | [error] | [ACH1008] |
+//! | Duplicate validate attribute | [semantic] | [error] | [ACH1009] |
+//! | Choices on non-choice prompt | [semantic] | [error] | [ACH1010] |
+//! | Missing choices for select | [semantic] | [error] | [ACH1011] |
+//! | Missing choices for multiselect | [semantic] | [error] | [ACH1012] |
+//! | Empty choices list | [semantic] | [error] | [ACH1013] |
+//! | Duplicate choice | [semantic] | [warning] | [ACH1014] |
+//! | Non-string choice | [semantic] | [error] | [ACH1015] |
+//! | Default type mismatch | [semantic] | [error] | [ACH1016] |
+//! | Select default not in choices | [semantic] | [error] | [ACH1017] |
+//! | Multiselect default must be array | [semantic] | [error] | [ACH1018] |
+//! | Multiselect default contains unknown choice | [semantic] | [error] | [ACH1019] |
+//! | Required false with no default | [semantic] | [hint] | [ACH1020] |
+//! | Dependency references unknown prompt | [dependency] | [error] | [ACH2000] |
+//! | Dependency references itself | [dependency] | [error] | [ACH2001] |
+//! | Dependency cycle | [dependency] | [error] | [ACH2002] |
+//! | Dependency type mismatch | [dependency] | [error] | [ACH2003] |
+//! | Contains on non-multiselect prompt | [dependency] | [error] | [ACH2004] |
+//! | Contains unknown choice | [dependency] | [error] | [ACH2005] |
+//! | String validation on non-string prompt | [validation] | [error] | [ACH3000] |
+//! | Selection validation on non-multiselect prompt | [validation] | [error] | [ACH3001] |
+//! | Invalid length bounds | [validation] | [error] | [ACH3002] |
+//! | Invalid selection bounds | [validation] | [error] | [ACH3003] |
 //!
 //! ## Code stability
 //!
@@ -79,6 +110,37 @@
 //! [ACH0013]: DiagnosticCode::InvalidIdentifier
 //! [ACH0014]: DiagnosticCode::InvalidInteger
 //! [ACH0015]: DiagnosticCode::MalformedArray
+//! [ACH1000]: DiagnosticCode::MissingBlueprintVersion
+//! [ACH1001]: DiagnosticCode::MissingBlueprintName
+//! [ACH1002]: DiagnosticCode::EmptyBlueprintName
+//! [ACH1003]: DiagnosticCode::EmptyBlueprintVersion
+//! [ACH1004]: DiagnosticCode::DuplicateBlueprintAttribute
+//! [ACH1005]: DiagnosticCode::MissingPromptType
+//! [ACH1006]: DiagnosticCode::EmptyPromptName
+//! [ACH1007]: DiagnosticCode::DuplicatePromptName
+//! [ACH1008]: DiagnosticCode::DuplicatePromptAttribute
+//! [ACH1009]: DiagnosticCode::DuplicateValidateAttribute
+//! [ACH1010]: DiagnosticCode::ChoicesOnNonChoicePrompt
+//! [ACH1011]: DiagnosticCode::MissingChoicesForSelect
+//! [ACH1012]: DiagnosticCode::MissingChoicesForMultiselect
+//! [ACH1013]: DiagnosticCode::EmptyChoicesList
+//! [ACH1014]: DiagnosticCode::DuplicateChoice
+//! [ACH1015]: DiagnosticCode::NonStringChoice
+//! [ACH1016]: DiagnosticCode::DefaultTypeMismatch
+//! [ACH1017]: DiagnosticCode::SelectDefaultNotInChoices
+//! [ACH1018]: DiagnosticCode::MultiselectDefaultMustBeArray
+//! [ACH1019]: DiagnosticCode::MultiselectDefaultContainsUnknownChoice
+//! [ACH1020]: DiagnosticCode::RequiredFalseWithNoDefault
+//! [ACH2000]: DiagnosticCode::UnknownDependencyReference
+//! [ACH2001]: DiagnosticCode::SelfDependency
+//! [ACH2002]: DiagnosticCode::DependencyCycle
+//! [ACH2003]: DiagnosticCode::DependencyTypeMismatch
+//! [ACH2004]: DiagnosticCode::ContainsOnNonMultiselectPrompt
+//! [ACH2005]: DiagnosticCode::ContainsUnknownChoice
+//! [ACH3000]: DiagnosticCode::StringValidationOnNonStringPrompt
+//! [ACH3001]: DiagnosticCode::SelectionValidationOnNonMultiselectPrompt
+//! [ACH3002]: DiagnosticCode::InvalidLengthBounds
+//! [ACH3003]: DiagnosticCode::InvalidSelectionBounds
 
 /// A user-facing issue found in Achitekfile source.
 ///
@@ -211,48 +273,128 @@ pub enum DiagnosticCode {
     InvalidInteger,
     /// `ACH0015`: an array literal is malformed.
     MalformedArray,
+    /// `ACH1000`: the `blueprint` block is missing the required `version` attribute.
+    MissingBlueprintVersion,
+    /// `ACH1001`: the `blueprint` block is missing the required `name` attribute.
+    MissingBlueprintName,
+    /// `ACH1002`: the `blueprint.name` attribute is empty.
+    EmptyBlueprintName,
+    /// `ACH1003`: the `blueprint.version` attribute is empty.
+    EmptyBlueprintVersion,
+    /// `ACH1004`: a `blueprint` block contains the same attribute more than once.
+    DuplicateBlueprintAttribute,
+    /// `ACH1005`: a `prompt` block is missing the required `type` attribute.
+    MissingPromptType,
+    /// `ACH1006`: a prompt name is empty.
+    EmptyPromptName,
+    /// `ACH1007`: more than one prompt uses the same name.
+    DuplicatePromptName,
+    /// `ACH1008`: a `prompt` block contains the same attribute more than once.
+    DuplicatePromptAttribute,
+    /// `ACH1009`: a `validate` block contains the same attribute more than once.
+    DuplicateValidateAttribute,
+    /// `ACH1010`: a non-choice prompt declares `choices`.
+    ChoicesOnNonChoicePrompt,
+    /// `ACH1011`: a `select` prompt has no choices.
+    MissingChoicesForSelect,
+    /// `ACH1012`: a `multiselect` prompt has no choices.
+    MissingChoicesForMultiselect,
+    /// `ACH1013`: a `choices` array is empty.
+    EmptyChoicesList,
+    /// `ACH1014`: a `choices` array contains the same choice more than once.
+    DuplicateChoice,
+    /// `ACH1015`: a `choices` array contains a non-string value.
+    NonStringChoice,
+    /// `ACH1016`: a prompt default does not match the prompt type.
+    DefaultTypeMismatch,
+    /// `ACH1017`: a `select` default is not one of the prompt choices.
+    SelectDefaultNotInChoices,
+    /// `ACH1018`: a `multiselect` default is not an array.
+    MultiselectDefaultMustBeArray,
+    /// `ACH1019`: a `multiselect` default contains a value not listed in choices.
+    MultiselectDefaultContainsUnknownChoice,
+    /// `ACH1020`: a prompt explicitly sets `required = false` without a default.
+    RequiredFalseWithNoDefault,
+    /// `ACH2000`: a dependency references a prompt that does not exist.
+    UnknownDependencyReference,
+    /// `ACH2001`: a prompt depends on itself.
+    SelfDependency,
+    /// `ACH2002`: prompt dependencies contain a cycle.
+    DependencyCycle,
+    /// `ACH2003`: a dependency expression compares incompatible value types.
+    DependencyTypeMismatch,
+    /// `ACH2004`: a dependency uses `contains` on a prompt that is not `multiselect`.
+    ContainsOnNonMultiselectPrompt,
+    /// `ACH2005`: a dependency `contains` argument is not one of the referenced prompt choices.
+    ContainsUnknownChoice,
+    /// `ACH3000`: string validation is used on a non-string prompt.
+    StringValidationOnNonStringPrompt,
+    /// `ACH3001`: selection-count validation is used on a non-`multiselect` prompt.
+    SelectionValidationOnNonMultiselectPrompt,
+    /// `ACH3002`: string length validation bounds are invalid.
+    InvalidLengthBounds,
+    /// `ACH3003`: selection-count validation bounds are invalid.
+    InvalidSelectionBounds,
 }
 impl DiagnosticCode {
     /// Returns the broad diagnostic category for this code.
     pub fn kind(&self) -> DiagnosticKind {
         match self {
-            Self::MissingBlueprintBlock => DiagnosticKind::Syntax,
-            Self::MultipleBlueprintBlocks => DiagnosticKind::Syntax,
-            Self::PromptBeforeBlueprint => DiagnosticKind::Syntax,
-            Self::UnknownTopLevelItem => DiagnosticKind::Syntax,
-            Self::UnknownBlueprintAttribute => DiagnosticKind::Syntax,
-            Self::UnknownPromptAttribute => DiagnosticKind::Syntax,
-            Self::UnknownValidateAttribute => DiagnosticKind::Syntax,
-            Self::UnknownPromptType => DiagnosticKind::Syntax,
-            Self::InvalidBooleanLiteral => DiagnosticKind::Syntax,
-            Self::UnterminatedString => DiagnosticKind::Syntax,
-            Self::InvalidEscapeSequence => DiagnosticKind::Syntax,
-            Self::InvalidDependencyExpression => DiagnosticKind::Syntax,
-            Self::UnknownDependencyMethod => DiagnosticKind::Syntax,
-            Self::InvalidIdentifier => DiagnosticKind::Syntax,
-            Self::InvalidInteger => DiagnosticKind::Syntax,
-            Self::MalformedArray => DiagnosticKind::Syntax,
+            Self::MissingBlueprintBlock
+            | Self::MultipleBlueprintBlocks
+            | Self::PromptBeforeBlueprint
+            | Self::UnknownTopLevelItem
+            | Self::UnknownBlueprintAttribute
+            | Self::UnknownPromptAttribute
+            | Self::UnknownValidateAttribute
+            | Self::UnknownPromptType
+            | Self::InvalidBooleanLiteral
+            | Self::UnterminatedString
+            | Self::InvalidEscapeSequence
+            | Self::InvalidDependencyExpression
+            | Self::UnknownDependencyMethod
+            | Self::InvalidIdentifier
+            | Self::InvalidInteger
+            | Self::MalformedArray => DiagnosticKind::Syntax,
+            Self::MissingBlueprintVersion
+            | Self::MissingBlueprintName
+            | Self::EmptyBlueprintName
+            | Self::EmptyBlueprintVersion
+            | Self::DuplicateBlueprintAttribute
+            | Self::MissingPromptType
+            | Self::EmptyPromptName
+            | Self::DuplicatePromptName
+            | Self::DuplicatePromptAttribute
+            | Self::DuplicateValidateAttribute
+            | Self::ChoicesOnNonChoicePrompt
+            | Self::MissingChoicesForSelect
+            | Self::MissingChoicesForMultiselect
+            | Self::EmptyChoicesList
+            | Self::DuplicateChoice
+            | Self::NonStringChoice
+            | Self::DefaultTypeMismatch
+            | Self::SelectDefaultNotInChoices
+            | Self::MultiselectDefaultMustBeArray
+            | Self::MultiselectDefaultContainsUnknownChoice
+            | Self::RequiredFalseWithNoDefault => DiagnosticKind::Semantic,
+            Self::UnknownDependencyReference
+            | Self::SelfDependency
+            | Self::DependencyCycle
+            | Self::DependencyTypeMismatch
+            | Self::ContainsOnNonMultiselectPrompt
+            | Self::ContainsUnknownChoice => DiagnosticKind::Dependency,
+            Self::StringValidationOnNonStringPrompt
+            | Self::SelectionValidationOnNonMultiselectPrompt
+            | Self::InvalidLengthBounds
+            | Self::InvalidSelectionBounds => DiagnosticKind::Validation,
         }
     }
     /// Returns the severity of the diagnostic code
     pub fn severity(&self) -> Severity {
         match self {
-            Self::MissingBlueprintBlock => Severity::Error,
-            Self::MultipleBlueprintBlocks => Severity::Error,
-            Self::PromptBeforeBlueprint => Severity::Error,
-            Self::UnknownTopLevelItem => Severity::Error,
-            Self::UnknownBlueprintAttribute => Severity::Error,
-            Self::UnknownPromptAttribute => Severity::Error,
-            Self::UnknownValidateAttribute => Severity::Error,
-            Self::UnknownPromptType => Severity::Error,
-            Self::InvalidBooleanLiteral => Severity::Error,
-            Self::UnterminatedString => Severity::Error,
-            Self::InvalidEscapeSequence => Severity::Error,
-            Self::InvalidDependencyExpression => Severity::Error,
-            Self::UnknownDependencyMethod => Severity::Error,
-            Self::InvalidIdentifier => Severity::Error,
-            Self::InvalidInteger => Severity::Error,
-            Self::MalformedArray => Severity::Error,
+            Self::DuplicateChoice => Severity::Warning,
+            Self::RequiredFalseWithNoDefault => Severity::Hint,
+            _ => Severity::Error,
         }
     }
     /// Returns the stable machine-readable code
@@ -274,6 +416,37 @@ impl DiagnosticCode {
             Self::InvalidIdentifier => "ACH0013",
             Self::InvalidInteger => "ACH0014",
             Self::MalformedArray => "ACH0015",
+            Self::MissingBlueprintVersion => "ACH1000",
+            Self::MissingBlueprintName => "ACH1001",
+            Self::EmptyBlueprintName => "ACH1002",
+            Self::EmptyBlueprintVersion => "ACH1003",
+            Self::DuplicateBlueprintAttribute => "ACH1004",
+            Self::MissingPromptType => "ACH1005",
+            Self::EmptyPromptName => "ACH1006",
+            Self::DuplicatePromptName => "ACH1007",
+            Self::DuplicatePromptAttribute => "ACH1008",
+            Self::DuplicateValidateAttribute => "ACH1009",
+            Self::ChoicesOnNonChoicePrompt => "ACH1010",
+            Self::MissingChoicesForSelect => "ACH1011",
+            Self::MissingChoicesForMultiselect => "ACH1012",
+            Self::EmptyChoicesList => "ACH1013",
+            Self::DuplicateChoice => "ACH1014",
+            Self::NonStringChoice => "ACH1015",
+            Self::DefaultTypeMismatch => "ACH1016",
+            Self::SelectDefaultNotInChoices => "ACH1017",
+            Self::MultiselectDefaultMustBeArray => "ACH1018",
+            Self::MultiselectDefaultContainsUnknownChoice => "ACH1019",
+            Self::RequiredFalseWithNoDefault => "ACH1020",
+            Self::UnknownDependencyReference => "ACH2000",
+            Self::SelfDependency => "ACH2001",
+            Self::DependencyCycle => "ACH2002",
+            Self::DependencyTypeMismatch => "ACH2003",
+            Self::ContainsOnNonMultiselectPrompt => "ACH2004",
+            Self::ContainsUnknownChoice => "ACH2005",
+            Self::StringValidationOnNonStringPrompt => "ACH3000",
+            Self::SelectionValidationOnNonMultiselectPrompt => "ACH3001",
+            Self::InvalidLengthBounds => "ACH3002",
+            Self::InvalidSelectionBounds => "ACH3003",
         }
     }
 
@@ -296,6 +469,41 @@ impl DiagnosticCode {
             Self::InvalidIdentifier => "invalid identifier",
             Self::InvalidInteger => "invalid integer literal",
             Self::MalformedArray => "malformed array literal",
+            Self::MissingBlueprintVersion => "missing blueprint version",
+            Self::MissingBlueprintName => "missing blueprint name",
+            Self::EmptyBlueprintName => "empty blueprint name",
+            Self::EmptyBlueprintVersion => "empty blueprint version",
+            Self::DuplicateBlueprintAttribute => "duplicate blueprint attribute",
+            Self::MissingPromptType => "missing prompt type",
+            Self::EmptyPromptName => "empty prompt name",
+            Self::DuplicatePromptName => "duplicate prompt name",
+            Self::DuplicatePromptAttribute => "duplicate prompt attribute",
+            Self::DuplicateValidateAttribute => "duplicate validate attribute",
+            Self::ChoicesOnNonChoicePrompt => "choices on non-choice prompt",
+            Self::MissingChoicesForSelect => "missing choices for select prompt",
+            Self::MissingChoicesForMultiselect => "missing choices for multiselect prompt",
+            Self::EmptyChoicesList => "empty choices list",
+            Self::DuplicateChoice => "duplicate choice",
+            Self::NonStringChoice => "non-string choice",
+            Self::DefaultTypeMismatch => "default type mismatch",
+            Self::SelectDefaultNotInChoices => "select default is not in choices",
+            Self::MultiselectDefaultMustBeArray => "multiselect default must be an array",
+            Self::MultiselectDefaultContainsUnknownChoice => {
+                "multiselect default contains unknown choice"
+            }
+            Self::RequiredFalseWithNoDefault => "required false with no default",
+            Self::UnknownDependencyReference => "dependency references unknown prompt",
+            Self::SelfDependency => "dependency references itself",
+            Self::DependencyCycle => "dependency cycle",
+            Self::DependencyTypeMismatch => "dependency type mismatch",
+            Self::ContainsOnNonMultiselectPrompt => "contains on non-multiselect prompt",
+            Self::ContainsUnknownChoice => "contains unknown choice",
+            Self::StringValidationOnNonStringPrompt => "string validation on non-string prompt",
+            Self::SelectionValidationOnNonMultiselectPrompt => {
+                "selection validation on non-multiselect prompt"
+            }
+            Self::InvalidLengthBounds => "invalid length bounds",
+            Self::InvalidSelectionBounds => "invalid selection bounds",
         }
     }
 
@@ -338,6 +546,77 @@ impl DiagnosticCode {
             ),
             Self::InvalidInteger => Some("Use a non-negative integer such as `1` or `42`."),
             Self::MalformedArray => Some("Use `[value, value]` with comma-separated values."),
+            Self::MissingBlueprintVersion => {
+                Some("Add a `version = \"...\"` attribute to the `blueprint` block.")
+            }
+            Self::MissingBlueprintName => {
+                Some("Add a `name = \"...\"` attribute to the `blueprint` block.")
+            }
+            Self::EmptyBlueprintName => Some("Use a non-empty blueprint `name` value."),
+            Self::EmptyBlueprintVersion => Some("Use a non-empty blueprint `version` value."),
+            Self::DuplicateBlueprintAttribute => {
+                Some("Keep one value for each `blueprint` attribute.")
+            }
+            Self::MissingPromptType => Some("Add a `type = ...` attribute to the prompt block."),
+            Self::EmptyPromptName => Some("Use a non-empty prompt name."),
+            Self::DuplicatePromptName => Some("Give each prompt a unique name."),
+            Self::DuplicatePromptAttribute => {
+                Some("Keep one value for each prompt attribute in a prompt block.")
+            }
+            Self::DuplicateValidateAttribute => {
+                Some("Keep one value for each validation attribute in a `validate` block.")
+            }
+            Self::ChoicesOnNonChoicePrompt => {
+                Some("Use `choices` only with `select` or `multiselect` prompts.")
+            }
+            Self::MissingChoicesForSelect => {
+                Some("Add a non-empty `choices = [...]` array to the `select` prompt.")
+            }
+            Self::MissingChoicesForMultiselect => {
+                Some("Add a non-empty `choices = [...]` array to the `multiselect` prompt.")
+            }
+            Self::EmptyChoicesList => Some("Add at least one string choice."),
+            Self::DuplicateChoice => Some("Remove the duplicate choice value."),
+            Self::NonStringChoice => Some("Use string literals for prompt choices."),
+            Self::DefaultTypeMismatch => Some("Use a default value that matches the prompt type."),
+            Self::SelectDefaultNotInChoices => {
+                Some("Set the default to one of the values in `choices`.")
+            }
+            Self::MultiselectDefaultMustBeArray => {
+                Some("Use an array default such as `default = [\"one\"]`.")
+            }
+            Self::MultiselectDefaultContainsUnknownChoice => {
+                Some("Every default value must also appear in `choices`.")
+            }
+            Self::RequiredFalseWithNoDefault => {
+                Some("Remove `required = false` or provide a useful `default` value.")
+            }
+            Self::UnknownDependencyReference => {
+                Some("Reference the name of another prompt declared in this file.")
+            }
+            Self::SelfDependency => Some("A prompt cannot depend on itself."),
+            Self::DependencyCycle => Some("Remove or rewrite one dependency to break the cycle."),
+            Self::DependencyTypeMismatch => {
+                Some("Compare dependency values with values that match the referenced prompt type.")
+            }
+            Self::ContainsOnNonMultiselectPrompt => {
+                Some("Use `.contains(...)` only with `multiselect` prompt dependencies.")
+            }
+            Self::ContainsUnknownChoice => {
+                Some("Use a `.contains(...)` value that appears in the referenced prompt choices.")
+            }
+            Self::StringValidationOnNonStringPrompt => Some(
+                "Use string length or regex validation only on `string` or `paragraph` prompts.",
+            ),
+            Self::SelectionValidationOnNonMultiselectPrompt => {
+                Some("Use selection-count validation only on `multiselect` prompts.")
+            }
+            Self::InvalidLengthBounds => {
+                Some("Ensure `min_length` is less than or equal to `max_length`.")
+            }
+            Self::InvalidSelectionBounds => {
+                Some("Ensure `min_selections` is less than or equal to `max_selections`.")
+            }
         }
     }
 }
