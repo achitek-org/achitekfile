@@ -3,16 +3,6 @@ use std::collections::{HashMap, HashSet};
 use tree_sitter::{Language, Node, Query, QueryCursor, QueryError, StreamingIterator, Tree};
 
 /// A parsed prompt declaration from an Achitekfile.
-///
-/// `Prompt` is the semantic representation of a `prompt "name" { ... }`
-/// block. It intentionally hides the grammar wrappers used by Tree-sitter
-/// (`question_attribute`, `type_attribute`, `validate_block`, and friends) and
-/// exposes the information a caller needs to decide what to ask and how to
-/// validate the answer.
-///
-/// The prompt name is the stable identifier used by dependency expressions. A
-/// prompt such as `depends_on = database != "none"` references the prompt named
-/// `database`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Prompt {
     /// The prompt identifier from `prompt "..."`.
@@ -55,10 +45,6 @@ pub enum PromptType {
 }
 
 /// A literal or identifier value parsed from an Achitekfile.
-///
-/// Values are used by prompt defaults, choice arrays, and dependency
-/// comparisons. The parser preserves identifiers separately from strings so
-/// callers can distinguish `"database"` from `database`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value {
     /// A double-quoted string literal with supported escape sequences decoded.
@@ -82,9 +68,6 @@ pub enum Value {
 /// - `database != "none"`
 /// - `features.contains("auth")`
 /// - `all(database != "none", features.contains("auth"))`
-///
-/// In all of those examples, the referenced prompt names must appear before the
-/// dependent prompt returned by [`AchitekAst::ordered_prompts`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dependency {
     /// A direct dependency on another prompt by name, such as `depends_on = database`.

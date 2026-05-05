@@ -113,6 +113,22 @@ impl Diagnostic {
         }
     }
 
+    /// Creates a diagnostic with custom message text from a code and source
+    /// range.
+    pub(crate) fn with_message(
+        code: DiagnosticCode,
+        range: TextRange,
+        message: impl Into<String>,
+    ) -> Self {
+        Self {
+            code,
+            severity: code.severity(),
+            message: message.into(),
+            help: code.help().map(str::to_owned),
+            range,
+        }
+    }
+
     /// Getter for code field
     pub fn code(&self) -> DiagnosticCode {
         self.code
@@ -350,7 +366,7 @@ pub enum Severity {
 /// This type is independent of LSP positions. Language-server consumers should
 /// convert `byte` into the negotiated LSP position encoding before publishing
 /// diagnostics or other ranges to an editor.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct TextPosition {
     /// Zero-based line number.
     pub line: usize,
@@ -366,7 +382,7 @@ pub struct TextPosition {
 /// diagnostics, symbols, prompt names, attributes, and other source elements
 /// after converting into their presentation protocol's expected position
 /// encoding.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct TextRange {
     /// Start position of the range.
     pub start: TextPosition,
