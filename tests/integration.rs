@@ -65,6 +65,7 @@ mod analysis {
             blueprint.name.as_ref().map(|name| name.value.as_str()),
             Some("web-app")
         );
+        assert!(blueprint.range.is_some());
         assert_eq!(blueprint.description, None);
         assert_eq!(blueprint.author, None);
         assert_eq!(blueprint.min_achitek_version, None);
@@ -132,10 +133,17 @@ mod analysis {
             .expect("expected analysis to succeed")
             .into_valid()
             .expect_err("expected validation diagnostics");
+        let range = achitekfile::analyze(source)
+            .expect("expected analysis to succeed")
+            .file()
+            .blueprint()
+            .range
+            .expect("expected blueprint range");
 
-        assert!(diagnostics.iter().any(
-            |diagnostic| diagnostic.message() == "missing required blueprint `name` attribute"
-        ));
+        assert!(diagnostics.iter().any(|diagnostic| {
+            diagnostic.message() == "missing required blueprint `name` attribute"
+                && diagnostic.range() == range
+        }));
     }
 }
 

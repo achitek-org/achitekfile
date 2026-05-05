@@ -59,6 +59,12 @@ pub struct Spanned<T> {
 /// [`ValidBlueprint`] once required fields are known to be present.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Blueprint {
+    /// Source range for the recovered `blueprint { ... }` block.
+    ///
+    /// This is `None` when no blueprint block was recovered. Diagnostics for
+    /// missing blueprint attributes can use this range to point at the block
+    /// that should contain the missing field.
+    pub range: Option<TextRange>,
     /// Achitekfile format version declared by the blueprint.
     pub version: Option<Spanned<String>>,
     /// Blueprint name.

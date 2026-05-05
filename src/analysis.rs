@@ -128,12 +128,13 @@ fn validate_file(file: AchitekFile) -> Result<ValidAchitekFile, Vec<Diagnostic>>
 }
 
 fn validate_blueprint(blueprint: &Blueprint, diagnostics: &mut Vec<Diagnostic>) -> ValidBlueprint {
+    let blueprint_range = blueprint.range.unwrap_or_default();
     let version = match &blueprint.version {
         Some(version) => version.value.clone(),
         None => {
             diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::UnknownBlueprintAttribute,
-                TextRange::default(),
+                DiagnosticCode::MissingBlueprintVersion,
+                blueprint_range,
                 "missing required blueprint `version` attribute",
             ));
             String::new()
@@ -143,8 +144,8 @@ fn validate_blueprint(blueprint: &Blueprint, diagnostics: &mut Vec<Diagnostic>) 
         Some(name) => name.value.clone(),
         None => {
             diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::UnknownBlueprintAttribute,
-                TextRange::default(),
+                DiagnosticCode::MissingBlueprintName,
+                blueprint_range,
                 "missing required blueprint `name` attribute",
             ));
             String::new()
@@ -189,7 +190,10 @@ fn named_children(node: Node<'_>) -> std::vec::IntoIter<Node<'_>> {
 }
 
 fn parse_blueprint(node: Node<'_>, source: &str) -> Blueprint {
-    let mut blueprint = Blueprint::default();
+    let mut blueprint = Blueprint {
+        range: Some(text_range_for_node(node)),
+        ..Blueprint::default()
+    };
     for child in named_children(node) {
         if child.kind() != "blueprint_attribute" {
             continue;
