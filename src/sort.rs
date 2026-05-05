@@ -16,7 +16,7 @@
 //!
 //! Ported and modified from: <https://github.com/TheAlgorithms/Rust/blob/master/src/graph/topological_sort.rs>
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 /// A directed graph represented as an adjacency list of edges.
 ///
@@ -36,6 +36,53 @@ pub struct Graph<Node> {
     pub nodes: Vec<Node>,
     /// Directed edges between nodes.
     pub edges: DAGAsAdjacencyList<Node>,
+}
+
+/// Analysis result for a directed graph.
+///
+/// `sorted` is present only when the graph has no cycles. `cycles` contains
+/// strongly connected components that make a topological order impossible.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct GraphAnalysis<Node> {
+    /// Valid topological order when the graph is acyclic.
+    pub sorted: Option<Vec<Node>>,
+    /// Cycles found in the graph.
+    pub cycles: Vec<Cycle<Node>>,
+}
+
+/// A cyclic region of a graph.
+///
+/// The `nodes` field contains the nodes participating in the cycle. The `edges`
+/// field contains the original graph edges where both endpoints are in
+/// `nodes`. For a self-dependency, `nodes` contains one node and `edges`
+/// contains the self edge.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Cycle<Node> {
+    /// Nodes participating in the cycle.
+    pub nodes: Vec<Node>,
+    /// Edges between cycle nodes.
+    pub edges: Vec<(Node, Node)>,
+}
+
+/// Analyzes a graph for both topological order and cycle diagnostics.
+///
+/// This is the richer API for callers that need user-facing diagnostics. Use
+/// [`sort_graph`] when all you need is the sorted order or an error.
+pub fn analyze_graph<Node: std::hash::Hash + Eq + Clone>(
+    graph: &Graph<Node>,
+) -> GraphAnalysis<Node> {
+    let nodes = normalized_nodes(graph);
+    let sorted = topological_sort(&nodes, &graph.edges);
+    let cycles = find_cycles(&nodes, &graph.edges);
+
+    GraphAnalysis {
+        sorted: if cycles.is_empty() {
+            Some(sorted)
+        } else {
+            None
+        },
+        cycles,
+    }
 }
 
 /// Sorts a graph with [Kahn's algorithm](https://en.wikipedia.org/wiki/Topological_sorting).
@@ -72,15 +119,41 @@ pub struct Graph<Node> {
 pub fn sort_graph<Node: std::hash::Hash + Eq + Clone>(
     graph: &Graph<Node>,
 ) -> Result<Vec<Node>, SortError<Node>> {
-    // initialize data structures
+    let analysis = analyze_graph(graph);
+
+    if let Some(sorted) = analysis.sorted {
+        Ok(sorted)
+    } else {
+        Err(SortError::CycleDetected(analysis.cycles))
+    }
+}
+
+fn normalized_nodes<Node: std::hash::Hash + Eq + Clone>(graph: &Graph<Node>) -> Vec<Node> {
+    let mut nodes = graph.nodes.clone();
+    let mut seen = nodes.iter().cloned().collect::<HashSet<_>>();
+
+    for (source, destination) in &graph.edges {
+        if seen.insert(source.clone()) {
+            nodes.push(source.clone());
+        }
+        if seen.insert(destination.clone()) {
+            nodes.push(destination.clone());
+        }
+    }
+
+    nodes
+}
+
+fn topological_sort<Node: std::hash::Hash + Eq + Clone>(
+    nodes: &[Node],
+    edges: &[(Node, Node)],
+) -> Vec<Node> {
     let mut dependencies_to_dependents_map: HashMap<Node, Vec<Node>> = HashMap::default();
     let mut in_degree_map: HashMap<Node, usize> = HashMap::default();
-    // initialize the in-degree of all nodes to 0.
-    for node in &graph.nodes {
+    for node in nodes {
         in_degree_map.entry(node.clone()).or_insert(0);
     }
-    // build the dependency mapping and update in-degree counts based on graph edges.
-    for (src, dest) in &graph.edges {
+    for (src, dest) in edges {
         dependencies_to_dependents_map
             .entry(src.clone())
             .or_default()
@@ -91,8 +164,7 @@ pub fn sort_graph<Node: std::hash::Hash + Eq + Clone>(
 
     let mut queue: VecDeque<Node> = VecDeque::default();
 
-    // add all nodes with zero in-degree to the queue in the graph's declared order.
-    for node in &graph.nodes {
+    for node in nodes {
         if in_degree_map.get(node).is_some_and(|count| *count == 0) {
             queue.push_back(node.clone());
         }
@@ -106,28 +178,132 @@ pub fn sort_graph<Node: std::hash::Hash + Eq + Clone>(
 
         in_degree_map.remove(&node_without_incoming_edges);
 
-        // decrement the in-degree of each dependent node.
-        for neighbor in dependencies_to_dependents_map
-            .get(&node_without_incoming_edges)
-            .unwrap_or(&vec![])
-        {
-            if let Some(count) = in_degree_map.get_mut(neighbor) {
-                *count -= 1;
+        if let Some(neighbors) = dependencies_to_dependents_map.get(&node_without_incoming_edges) {
+            for neighbor in neighbors {
+                if let Some(count) = in_degree_map.get_mut(neighbor) {
+                    *count -= 1;
 
-                // remove from in-degree map and add it to the queue if count becomes 0
-                if *count == 0 {
-                    in_degree_map.remove(neighbor);
+                    if *count == 0 {
+                        in_degree_map.remove(neighbor);
 
-                    queue.push_back(neighbor.clone());
+                        queue.push_back(neighbor.clone());
+                    }
                 }
             }
         }
     }
 
-    if in_degree_map.is_empty() {
-        Ok(sorted)
+    sorted
+}
+
+fn find_cycles<Node: std::hash::Hash + Eq + Clone>(
+    nodes: &[Node],
+    edges: &[(Node, Node)],
+) -> Vec<Cycle<Node>> {
+    let mut adjacency = HashMap::<Node, Vec<Node>>::new();
+    for node in nodes {
+        adjacency.entry(node.clone()).or_default();
+    }
+    for (source, destination) in edges {
+        adjacency
+            .entry(source.clone())
+            .or_default()
+            .push(destination.clone());
+    }
+
+    let mut state = TarjanState {
+        adjacency: &adjacency,
+        index: 0,
+        indexes: HashMap::new(),
+        lowlinks: HashMap::new(),
+        stack: Vec::new(),
+        on_stack: HashSet::new(),
+        components: Vec::new(),
+    };
+
+    for node in nodes {
+        if !state.indexes.contains_key(node) {
+            state.strong_connect(node.clone());
+        }
+    }
+
+    state
+        .components
+        .into_iter()
+        .filter_map(|component| component_to_cycle(component, edges))
+        .collect()
+}
+
+struct TarjanState<'a, Node> {
+    adjacency: &'a HashMap<Node, Vec<Node>>,
+    index: usize,
+    indexes: HashMap<Node, usize>,
+    lowlinks: HashMap<Node, usize>,
+    stack: Vec<Node>,
+    on_stack: HashSet<Node>,
+    components: Vec<Vec<Node>>,
+}
+
+impl<Node: std::hash::Hash + Eq + Clone> TarjanState<'_, Node> {
+    fn strong_connect(&mut self, node: Node) {
+        self.indexes.insert(node.clone(), self.index);
+        self.lowlinks.insert(node.clone(), self.index);
+        self.index += 1;
+        self.stack.push(node.clone());
+        self.on_stack.insert(node.clone());
+
+        for neighbor in self.adjacency.get(&node).into_iter().flatten() {
+            if !self.indexes.contains_key(neighbor) {
+                self.strong_connect(neighbor.clone());
+                let neighbor_lowlink = self.lowlinks[neighbor];
+                let node_lowlink = self.lowlinks[&node];
+                self.lowlinks
+                    .insert(node.clone(), node_lowlink.min(neighbor_lowlink));
+            } else if self.on_stack.contains(neighbor) {
+                let neighbor_index = self.indexes[neighbor];
+                let node_lowlink = self.lowlinks[&node];
+                self.lowlinks
+                    .insert(node.clone(), node_lowlink.min(neighbor_index));
+            }
+        }
+
+        if self.indexes[&node] == self.lowlinks[&node] {
+            let mut component = Vec::new();
+            while let Some(item) = self.stack.pop() {
+                self.on_stack.remove(&item);
+                component.push(item.clone());
+                if item == node {
+                    break;
+                }
+            }
+            component.reverse();
+            self.components.push(component);
+        }
+    }
+}
+
+fn component_to_cycle<Node: std::hash::Hash + Eq + Clone>(
+    nodes: Vec<Node>,
+    edges: &[(Node, Node)],
+) -> Option<Cycle<Node>> {
+    let node_set = nodes.iter().cloned().collect::<HashSet<_>>();
+    let cycle_edges = edges
+        .iter()
+        .filter(|(source, destination)| node_set.contains(source) && node_set.contains(destination))
+        .cloned()
+        .collect::<Vec<_>>();
+
+    if nodes.len() > 1
+        || cycle_edges
+            .iter()
+            .any(|(source, destination)| source == destination)
+    {
+        Some(Cycle {
+            nodes,
+            edges: cycle_edges,
+        })
     } else {
-        Err(SortError::CycleDetected(graph.edges.clone()))
+        None
     }
 }
 
@@ -136,9 +312,9 @@ pub fn sort_graph<Node: std::hash::Hash + Eq + Clone>(
 pub enum SortError<Node> {
     /// A cycle was detected in the graph, making topological sorting impossible.
     ///
-    /// Contains a vector of edges `(source, destination)` that form or are part of the cycle.
+    /// Contains cyclic regions found in the graph.
     /// When a cycle exists, there is no valid topological ordering of the nodes.
-    CycleDetected(Vec<(Node, Node)>),
+    CycleDetected(Vec<Cycle<Node>>),
 }
 
 impl<Node> std::error::Error for SortError<Node> where
@@ -151,29 +327,16 @@ impl<Node: Clone + Ord + std::fmt::Display + std::fmt::Debug> std::fmt::Display
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            SortError::CycleDetected(edges) => {
+            SortError::CycleDetected(cycles) => {
                 writeln!(f, "Cycle detected in the following DAG:")?;
-                // Gather all unique nodes using Clone.
-                let mut unique_nodes = std::collections::BTreeSet::new();
-                for (src, dest) in edges.iter() {
-                    unique_nodes.insert(src.clone());
-                    unique_nodes.insert(dest.clone());
-                }
-                // Collect the unique nodes into a sorted vector.
-                let sorted_nodes: Vec<Node> = unique_nodes.into_iter().collect();
-                // Display the sorted nodes.
-                writeln!(f, "Nodes:")?;
-                for node in &sorted_nodes {
-                    write!(f, "{} ", node)?;
-                }
-                writeln!(f, "\n")?;
-                // Display edges with an arrow based on the order.
-                writeln!(f, "Edges:")?;
-                for (src, dest) in edges.iter() {
-                    if src < dest {
-                        writeln!(f, "  {} → {}", src, dest)?;
-                    } else {
-                        writeln!(f, "  {} ↖ {}", src, dest)?;
+                for cycle in cycles {
+                    writeln!(f, "Cycle nodes:")?;
+                    for node in &cycle.nodes {
+                        write!(f, "{} ", node)?;
+                    }
+                    writeln!(f, "\nEdges:")?;
+                    for (src, dest) in &cycle.edges {
+                        writeln!(f, "  {} -> {}", src, dest)?;
                     }
                 }
                 Ok(())
@@ -293,5 +456,43 @@ mod tests {
         let sorted = sort_graph::<&str>(&graph);
 
         assert!(sorted.is_err());
+    }
+
+    #[test]
+    fn analyze_graph_returns_cycle_participants() {
+        let graph = Graph {
+            nodes: vec!["database", "orm", "api", "frontend"],
+            edges: vec![
+                ("database", "orm"),
+                ("orm", "api"),
+                ("api", "database"),
+                ("api", "frontend"),
+            ],
+        };
+
+        let analysis = analyze_graph(&graph);
+
+        assert_eq!(analysis.sorted, None);
+        assert_eq!(analysis.cycles.len(), 1);
+        assert_eq!(analysis.cycles[0].nodes, vec!["database", "orm", "api"]);
+        assert_eq!(
+            analysis.cycles[0].edges,
+            vec![("database", "orm"), ("orm", "api"), ("api", "database")]
+        );
+    }
+
+    #[test]
+    fn analyze_graph_returns_self_cycle() {
+        let graph = Graph {
+            nodes: vec!["project", "author"],
+            edges: vec![("project", "project"), ("project", "author")],
+        };
+
+        let analysis = analyze_graph(&graph);
+
+        assert_eq!(analysis.sorted, None);
+        assert_eq!(analysis.cycles.len(), 1);
+        assert_eq!(analysis.cycles[0].nodes, vec!["project"]);
+        assert_eq!(analysis.cycles[0].edges, vec![("project", "project")]);
     }
 }
