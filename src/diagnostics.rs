@@ -41,6 +41,8 @@
 //! | Invalid identifier | [syntax] | [error] | [ACH0013] |
 //! | Invalid integer | [syntax] | [error] | [ACH0014] |
 //! | Malformed array | [syntax] | [error] | [ACH0015] |
+//! | Missing prompt name | [syntax] | [error] | [ACH0016] |
+//! | Missing attribute value | [syntax] | [error] | [ACH0017] |
 //! | Missing blueprint version | [semantic] | [error] | [ACH1000] |
 //! | Missing blueprint name | [semantic] | [error] | [ACH1001] |
 //! | Empty blueprint name | [semantic] | [error] | [ACH1002] |
@@ -62,6 +64,9 @@
 //! | Multiselect default must be array | [semantic] | [error] | [ACH1018] |
 //! | Multiselect default contains unknown choice | [semantic] | [error] | [ACH1019] |
 //! | Required false with no default | [semantic] | [hint] | [ACH1020] |
+//! | Duplicate validate block | [semantic] | [error] | [ACH1021] |
+//! | Invalid blueprint version | [semantic] | [error] | [ACH1022] |
+//! | Invalid minimum Achitek version | [semantic] | [error] | [ACH1023] |
 //! | Dependency references unknown prompt | [dependency] | [error] | [ACH2000] |
 //! | Dependency references itself | [dependency] | [error] | [ACH2001] |
 //! | Dependency cycle | [dependency] | [error] | [ACH2002] |
@@ -72,6 +77,7 @@
 //! | Selection validation on non-multiselect prompt | [validation] | [error] | [ACH3001] |
 //! | Invalid length bounds | [validation] | [error] | [ACH3002] |
 //! | Invalid selection bounds | [validation] | [error] | [ACH3003] |
+//! | Invalid regex | [validation] | [error] | [ACH3004] |
 //!
 //! ## Code stability
 //!
@@ -110,6 +116,8 @@
 //! [ACH0013]: DiagnosticCode::InvalidIdentifier
 //! [ACH0014]: DiagnosticCode::InvalidInteger
 //! [ACH0015]: DiagnosticCode::MalformedArray
+//! [ACH0016]: DiagnosticCode::MissingPromptName
+//! [ACH0017]: DiagnosticCode::MissingAttributeValue
 //! [ACH1000]: DiagnosticCode::MissingBlueprintVersion
 //! [ACH1001]: DiagnosticCode::MissingBlueprintName
 //! [ACH1002]: DiagnosticCode::EmptyBlueprintName
@@ -131,6 +139,9 @@
 //! [ACH1018]: DiagnosticCode::MultiselectDefaultMustBeArray
 //! [ACH1019]: DiagnosticCode::MultiselectDefaultContainsUnknownChoice
 //! [ACH1020]: DiagnosticCode::RequiredFalseWithNoDefault
+//! [ACH1021]: DiagnosticCode::DuplicateValidateBlock
+//! [ACH1022]: DiagnosticCode::InvalidBlueprintVersion
+//! [ACH1023]: DiagnosticCode::InvalidMinimumAchitekVersion
 //! [ACH2000]: DiagnosticCode::UnknownDependencyReference
 //! [ACH2001]: DiagnosticCode::SelfDependency
 //! [ACH2002]: DiagnosticCode::DependencyCycle
@@ -141,6 +152,7 @@
 //! [ACH3001]: DiagnosticCode::SelectionValidationOnNonMultiselectPrompt
 //! [ACH3002]: DiagnosticCode::InvalidLengthBounds
 //! [ACH3003]: DiagnosticCode::InvalidSelectionBounds
+//! [ACH3004]: DiagnosticCode::InvalidRegex
 
 /// A user-facing issue found in Achitekfile source.
 ///
@@ -273,6 +285,10 @@ pub enum DiagnosticCode {
     InvalidInteger,
     /// `ACH0015`: an array literal is malformed.
     MalformedArray,
+    /// `ACH0016`: a `prompt` block is missing its required string name.
+    MissingPromptName,
+    /// `ACH0017`: an attribute is missing the value after `=`.
+    MissingAttributeValue,
     /// `ACH1000`: the `blueprint` block is missing the required `version` attribute.
     MissingBlueprintVersion,
     /// `ACH1001`: the `blueprint` block is missing the required `name` attribute.
@@ -315,6 +331,12 @@ pub enum DiagnosticCode {
     MultiselectDefaultContainsUnknownChoice,
     /// `ACH1020`: a prompt explicitly sets `required = false` without a default.
     RequiredFalseWithNoDefault,
+    /// `ACH1021`: a prompt contains more than one `validate` block.
+    DuplicateValidateBlock,
+    /// `ACH1022`: the `blueprint.version` attribute is not a valid version.
+    InvalidBlueprintVersion,
+    /// `ACH1023`: the `blueprint.min_achitek_version` attribute is not a valid version.
+    InvalidMinimumAchitekVersion,
     /// `ACH2000`: a dependency references a prompt that does not exist.
     UnknownDependencyReference,
     /// `ACH2001`: a prompt depends on itself.
@@ -335,6 +357,8 @@ pub enum DiagnosticCode {
     InvalidLengthBounds,
     /// `ACH3003`: selection-count validation bounds are invalid.
     InvalidSelectionBounds,
+    /// `ACH3004`: a `regex` validation rule is not a valid regular expression.
+    InvalidRegex,
 }
 impl DiagnosticCode {
     /// Returns the broad diagnostic category for this code.
@@ -355,7 +379,9 @@ impl DiagnosticCode {
             | Self::UnknownDependencyMethod
             | Self::InvalidIdentifier
             | Self::InvalidInteger
-            | Self::MalformedArray => DiagnosticKind::Syntax,
+            | Self::MalformedArray
+            | Self::MissingPromptName
+            | Self::MissingAttributeValue => DiagnosticKind::Syntax,
             Self::MissingBlueprintVersion
             | Self::MissingBlueprintName
             | Self::EmptyBlueprintName
@@ -376,7 +402,10 @@ impl DiagnosticCode {
             | Self::SelectDefaultNotInChoices
             | Self::MultiselectDefaultMustBeArray
             | Self::MultiselectDefaultContainsUnknownChoice
-            | Self::RequiredFalseWithNoDefault => DiagnosticKind::Semantic,
+            | Self::RequiredFalseWithNoDefault
+            | Self::DuplicateValidateBlock
+            | Self::InvalidBlueprintVersion
+            | Self::InvalidMinimumAchitekVersion => DiagnosticKind::Semantic,
             Self::UnknownDependencyReference
             | Self::SelfDependency
             | Self::DependencyCycle
@@ -386,7 +415,8 @@ impl DiagnosticCode {
             Self::StringValidationOnNonStringPrompt
             | Self::SelectionValidationOnNonMultiselectPrompt
             | Self::InvalidLengthBounds
-            | Self::InvalidSelectionBounds => DiagnosticKind::Validation,
+            | Self::InvalidSelectionBounds
+            | Self::InvalidRegex => DiagnosticKind::Validation,
         }
     }
     /// Returns the severity of the diagnostic code
@@ -416,6 +446,8 @@ impl DiagnosticCode {
             Self::InvalidIdentifier => "ACH0013",
             Self::InvalidInteger => "ACH0014",
             Self::MalformedArray => "ACH0015",
+            Self::MissingPromptName => "ACH0016",
+            Self::MissingAttributeValue => "ACH0017",
             Self::MissingBlueprintVersion => "ACH1000",
             Self::MissingBlueprintName => "ACH1001",
             Self::EmptyBlueprintName => "ACH1002",
@@ -437,6 +469,9 @@ impl DiagnosticCode {
             Self::MultiselectDefaultMustBeArray => "ACH1018",
             Self::MultiselectDefaultContainsUnknownChoice => "ACH1019",
             Self::RequiredFalseWithNoDefault => "ACH1020",
+            Self::DuplicateValidateBlock => "ACH1021",
+            Self::InvalidBlueprintVersion => "ACH1022",
+            Self::InvalidMinimumAchitekVersion => "ACH1023",
             Self::UnknownDependencyReference => "ACH2000",
             Self::SelfDependency => "ACH2001",
             Self::DependencyCycle => "ACH2002",
@@ -447,6 +482,7 @@ impl DiagnosticCode {
             Self::SelectionValidationOnNonMultiselectPrompt => "ACH3001",
             Self::InvalidLengthBounds => "ACH3002",
             Self::InvalidSelectionBounds => "ACH3003",
+            Self::InvalidRegex => "ACH3004",
         }
     }
 
@@ -469,6 +505,8 @@ impl DiagnosticCode {
             Self::InvalidIdentifier => "invalid identifier",
             Self::InvalidInteger => "invalid integer literal",
             Self::MalformedArray => "malformed array literal",
+            Self::MissingPromptName => "missing prompt name",
+            Self::MissingAttributeValue => "missing attribute value",
             Self::MissingBlueprintVersion => "missing blueprint version",
             Self::MissingBlueprintName => "missing blueprint name",
             Self::EmptyBlueprintName => "empty blueprint name",
@@ -492,6 +530,9 @@ impl DiagnosticCode {
                 "multiselect default contains unknown choice"
             }
             Self::RequiredFalseWithNoDefault => "required false with no default",
+            Self::DuplicateValidateBlock => "duplicate validate block",
+            Self::InvalidBlueprintVersion => "invalid blueprint version",
+            Self::InvalidMinimumAchitekVersion => "invalid minimum Achitek version",
             Self::UnknownDependencyReference => "dependency references unknown prompt",
             Self::SelfDependency => "dependency references itself",
             Self::DependencyCycle => "dependency cycle",
@@ -504,6 +545,7 @@ impl DiagnosticCode {
             }
             Self::InvalidLengthBounds => "invalid length bounds",
             Self::InvalidSelectionBounds => "invalid selection bounds",
+            Self::InvalidRegex => "invalid regex",
         }
     }
 
@@ -546,6 +588,8 @@ impl DiagnosticCode {
             ),
             Self::InvalidInteger => Some("Use a non-negative integer such as `1` or `42`."),
             Self::MalformedArray => Some("Use `[value, value]` with comma-separated values."),
+            Self::MissingPromptName => Some("Write the prompt name as `prompt \"name\" { ... }`."),
+            Self::MissingAttributeValue => Some("Add a value after `=`, or remove the attribute."),
             Self::MissingBlueprintVersion => {
                 Some("Add a `version = \"...\"` attribute to the `blueprint` block.")
             }
@@ -591,6 +635,13 @@ impl DiagnosticCode {
             Self::RequiredFalseWithNoDefault => {
                 Some("Remove `required = false` or provide a useful `default` value.")
             }
+            Self::DuplicateValidateBlock => {
+                Some("Merge validation rules into a single `validate { ... }` block.")
+            }
+            Self::InvalidBlueprintVersion => Some("Use a valid version string such as `1.0.0`."),
+            Self::InvalidMinimumAchitekVersion => {
+                Some("Use a valid minimum Achitek version string such as `1.0.0`.")
+            }
             Self::UnknownDependencyReference => {
                 Some("Reference the name of another prompt declared in this file.")
             }
@@ -617,6 +668,7 @@ impl DiagnosticCode {
             Self::InvalidSelectionBounds => {
                 Some("Ensure `min_selections` is less than or equal to `max_selections`.")
             }
+            Self::InvalidRegex => Some("Use a regex pattern that can be compiled by Achitek."),
         }
     }
 }

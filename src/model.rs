@@ -113,13 +113,21 @@ pub struct Prompt {
     /// The prompt identifier from `prompt "..."`.
     pub name: String,
     /// The kind of input expected for this prompt.
-    pub prompt_type: PromptType,
+    ///
+    /// This is optional in the recovering model so diagnostics can report a
+    /// missing `type` attribute without discarding the rest of the prompt.
+    pub prompt_type: Option<PromptType>,
     /// Optional help text shown to a user alongside the prompt.
     pub help: Option<String>,
     /// The allowed choices for `select` and `multiselect` prompts.
     ///
     /// Non-choice prompt types may leave this empty.
     pub choices: Vec<Value>,
+    /// Whether the prompt declared a `choices` attribute.
+    ///
+    /// This lets analysis distinguish an omitted `choices` attribute from an
+    /// explicitly empty `choices = []` array.
+    pub choices_declared: bool,
     /// The default answer for the prompt, if one was declared.
     pub default: Option<Value>,
     /// Whether the prompt requires an answer.

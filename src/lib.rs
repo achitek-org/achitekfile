@@ -32,16 +32,12 @@
 #![deny(missing_docs)]
 
 mod analysis;
-mod ast;
 mod diagnostics;
 pub mod model;
 mod parser;
 mod sort;
 
 pub use analysis::{Analysis, AnalysisError, analyze};
-pub use ast::{
-    AchitekAst, AstError, ComparisonOperator, Dependency, Prompt, PromptType, Validation, Value,
-};
 pub use diagnostics::{
     Diagnostic, DiagnosticCode, DiagnosticKind, Severity, TextPosition, TextRange,
 };
