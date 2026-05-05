@@ -58,7 +58,7 @@ impl<'a> Analysis<'a> {
             return Err(self.diagnostics);
         }
 
-        validate_file(self.file)
+        Ok(validate_file(self.file))
     }
 }
 

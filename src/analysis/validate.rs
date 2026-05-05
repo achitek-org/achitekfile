@@ -1,55 +1,33 @@
-use crate::{
-    Diagnostic, DiagnosticCode,
-    model::{
-        AchitekFile, Blueprint, Prompt, PromptType, Spanned, ValidAchitekFile, ValidBlueprint,
-        ValidPrompt,
-    },
+use crate::model::{
+    AchitekFile, Blueprint, Prompt, PromptType, Spanned, ValidAchitekFile, ValidBlueprint,
+    ValidPrompt,
 };
 
-pub(super) fn validate_file(file: AchitekFile) -> Result<ValidAchitekFile, Vec<Diagnostic>> {
-    let mut diagnostics = Vec::new();
-    let blueprint = validate_blueprint(file.blueprint(), &mut diagnostics);
+pub(super) fn validate_file(file: AchitekFile) -> ValidAchitekFile {
+    let blueprint = validate_blueprint(file.blueprint());
     let prompts = file
         .prompts()
         .iter()
         .map(validate_prompt)
         .collect::<Vec<_>>();
 
-    if diagnostics.is_empty() {
-        Ok(ValidAchitekFile::new(blueprint, prompts))
-    } else {
-        Err(diagnostics)
-    }
+    ValidAchitekFile::new(blueprint, prompts)
 }
 
-fn validate_blueprint(blueprint: &Blueprint, diagnostics: &mut Vec<Diagnostic>) -> ValidBlueprint {
-    let blueprint_range = blueprint.range.unwrap_or_default();
-    let version = match &blueprint.version {
-        Some(version) => version.value.clone(),
-        None => {
-            diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::MissingBlueprintVersion,
-                blueprint_range,
-                "missing required blueprint `version` attribute",
-            ));
-            String::new()
-        }
-    };
-    let name = match &blueprint.name {
-        Some(name) => name.value.clone(),
-        None => {
-            diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::MissingBlueprintName,
-                blueprint_range,
-                "missing required blueprint `name` attribute",
-            ));
-            String::new()
-        }
-    };
-
+fn validate_blueprint(blueprint: &Blueprint) -> ValidBlueprint {
     ValidBlueprint {
-        version,
-        name,
+        version: blueprint
+            .version
+            .as_ref()
+            .expect("analysis should reject blueprints without a version")
+            .value
+            .clone(),
+        name: blueprint
+            .name
+            .as_ref()
+            .expect("analysis should reject blueprints without a name")
+            .value
+            .clone(),
         description: blueprint
             .description
             .as_ref()
