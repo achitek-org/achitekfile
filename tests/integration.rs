@@ -547,6 +547,25 @@ mod analysis {
         "#}
     );
 
+    #[test]
+    fn empty_choices_for_select_reports_empty_choices_only() {
+        let source = indoc! {r#"
+            blueprint {
+              version = "1.0.0"
+              name = "web-app"
+            }
+
+            prompt "kind" {
+              type = select
+              choices = []
+            }
+        "#};
+        let actual = diagnostic_codes(source);
+
+        assert!(actual.contains(&DiagnosticCode::EmptyChoicesList.as_str()));
+        assert!(!actual.contains(&DiagnosticCode::MissingChoicesForSelect.as_str()));
+    }
+
     diagnostic_test!(
         reports_duplicate_choice,
         DiagnosticCode::DuplicateChoice,

@@ -365,6 +365,21 @@ fn collect_choice_diagnostics(
     range: TextRange,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
+    if prompt.choices_declared && prompt.choices.is_empty() {
+        match prompt_type {
+            PromptType::Select | PromptType::MultiSelect => {
+                diagnostics.push(Diagnostic::new(DiagnosticCode::EmptyChoicesList, range));
+            }
+            PromptType::String | PromptType::Paragraph | PromptType::Bool => {
+                diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::ChoicesOnNonChoicePrompt,
+                    range,
+                ));
+            }
+        }
+        return;
+    }
+
     match prompt_type {
         PromptType::Select if prompt.choices.is_empty() => {
             diagnostics.push(Diagnostic::new(
@@ -388,16 +403,6 @@ fn collect_choice_diagnostics(
             return;
         }
         _ => {}
-    }
-
-    if prompt.choices_declared && prompt.choices.is_empty() {
-        match prompt_type {
-            PromptType::Select | PromptType::MultiSelect => {
-                diagnostics.push(Diagnostic::new(DiagnosticCode::EmptyChoicesList, range));
-            }
-            _ => {}
-        }
-        return;
     }
 
     if matches!(
