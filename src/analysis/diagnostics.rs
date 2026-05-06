@@ -14,7 +14,7 @@ pub(super) fn collect_diagnostics(
 ) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
     collect_file_shape_diagnostics(tree.root_node(), source, &mut diagnostics);
-    collect_syntax_diagnostics(tree.root_node(), &mut diagnostics);
+    collect_syntax_diagnostics(tree.root_node(), source, &mut diagnostics);
     collect_source_syntax_diagnostics(tree.root_node(), source, &mut diagnostics);
     collect_tree_semantic_diagnostics(tree.root_node(), source, &mut diagnostics);
     collect_semantic_diagnostics(file, &mut diagnostics);
@@ -49,6 +49,28 @@ fn collect_file_shape_diagnostics(root: Node<'_>, source: &str, diagnostics: &mu
                     text_range_for_node(node),
                 ));
             }
+            "ERROR" if starts_with_keyword(text(node, source), "blueprint") => {
+                blueprint_count += 1;
+                saw_blueprint = true;
+
+                if blueprint_count > 1 {
+                    diagnostics.push(Diagnostic::new(
+                        DiagnosticCode::MultipleBlueprintBlocks,
+                        text_range_for_node(node),
+                    ));
+                }
+            }
+            "ERROR"
+                if starts_with_keyword(text(node, source), "prompt")
+                    && !saw_blueprint
+                    && !reported_prompt_before_blueprint =>
+            {
+                reported_prompt_before_blueprint = true;
+                diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::PromptBeforeBlueprint,
+                    text_range_for_node(node),
+                ));
+            }
             _ => {}
         }
     }
@@ -56,25 +78,6 @@ fn collect_file_shape_diagnostics(root: Node<'_>, source: &str, diagnostics: &mu
     if blueprint_count == 0 {
         diagnostics.push(Diagnostic::new(
             DiagnosticCode::MissingBlueprintBlock,
-            text_range_for_node(root),
-        ));
-    }
-
-    let blueprint_mentions = source.match_indices("blueprint").collect::<Vec<_>>();
-    if blueprint_count <= 1 && blueprint_mentions.len() > 1 {
-        diagnostics.push(Diagnostic::new(
-            DiagnosticCode::MultipleBlueprintBlocks,
-            text_range_for_node(root),
-        ));
-    }
-
-    if let (Some(prompt_index), Some(blueprint_index)) =
-        (source.find("prompt"), source.find("blueprint"))
-        && prompt_index < blueprint_index
-        && !reported_prompt_before_blueprint
-    {
-        diagnostics.push(Diagnostic::new(
-            DiagnosticCode::PromptBeforeBlueprint,
             text_range_for_node(root),
         ));
     }
@@ -122,13 +125,6 @@ fn collect_source_syntax_diagnostics(
         ));
     }
 
-    if source.contains(".includes(") {
-        diagnostics.push(Diagnostic::new(
-            DiagnosticCode::UnknownDependencyMethod,
-            root_range,
-        ));
-    }
-
     if source.lines().any(|line| {
         let line = line.trim();
         [
@@ -147,13 +143,6 @@ fn collect_source_syntax_diagnostics(
         diagnostics.push(Diagnostic::new(DiagnosticCode::InvalidInteger, root_range));
     }
 
-    if source.contains("prompt {") {
-        diagnostics.push(Diagnostic::new(
-            DiagnosticCode::MissingPromptName,
-            root_range,
-        ));
-    }
-
     if source.lines().any(|line| line.trim_end().ends_with('=')) {
         diagnostics.push(Diagnostic::new(
             DiagnosticCode::MissingAttributeValue,
@@ -162,7 +151,7 @@ fn collect_source_syntax_diagnostics(
     }
 }
 
-fn collect_syntax_diagnostics(node: Node<'_>, diagnostics: &mut Vec<Diagnostic>) {
+fn collect_syntax_diagnostics(node: Node<'_>, source: &str, diagnostics: &mut Vec<Diagnostic>) {
     if node.is_missing() {
         diagnostics.push(Diagnostic::new(
             missing_node_code(node),
@@ -173,7 +162,7 @@ fn collect_syntax_diagnostics(node: Node<'_>, diagnostics: &mut Vec<Diagnostic>)
 
     if node.is_error() {
         diagnostics.push(Diagnostic::new(
-            error_node_code(node),
+            error_node_code(node, source),
             text_range_for_node(node),
         ));
         return;
@@ -181,7 +170,7 @@ fn collect_syntax_diagnostics(node: Node<'_>, diagnostics: &mut Vec<Diagnostic>)
 
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
-        collect_syntax_diagnostics(child, diagnostics);
+        collect_syntax_diagnostics(child, source, diagnostics);
     }
 }
 
@@ -276,62 +265,61 @@ fn collect_validate_tree_diagnostics(node: Node<'_>, diagnostics: &mut Vec<Diagn
 
 fn collect_semantic_diagnostics(file: &AchitekFile, diagnostics: &mut Vec<Diagnostic>) {
     let blueprint = file.blueprint();
-    let Some(blueprint_range) = blueprint.range else {
-        return;
-    };
 
-    match &blueprint.version {
-        Some(version) if version.value.is_empty() => {
+    if let Some(blueprint_range) = blueprint.range {
+        match &blueprint.version {
+            Some(version) if version.value.is_empty() => {
+                diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::EmptyBlueprintVersion,
+                    version.range,
+                ));
+            }
+            Some(_) => {}
+            None => {
+                diagnostics.push(Diagnostic::with_message(
+                    DiagnosticCode::MissingBlueprintVersion,
+                    blueprint_range,
+                    "missing required blueprint `version` attribute",
+                ));
+            }
+        }
+
+        match &blueprint.name {
+            Some(name) if name.value.is_empty() => {
+                diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::EmptyBlueprintName,
+                    name.range,
+                ));
+            }
+            Some(_) => {}
+            None => {
+                diagnostics.push(Diagnostic::with_message(
+                    DiagnosticCode::MissingBlueprintName,
+                    blueprint_range,
+                    "missing required blueprint `name` attribute",
+                ));
+            }
+        }
+
+        if let Some(version) = &blueprint.version
+            && !version.value.is_empty()
+            && !is_version_like(&version.value)
+        {
             diagnostics.push(Diagnostic::new(
-                DiagnosticCode::EmptyBlueprintVersion,
+                DiagnosticCode::InvalidBlueprintVersion,
                 version.range,
             ));
         }
-        Some(_) => {}
-        None => {
-            diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::MissingBlueprintVersion,
-                blueprint_range,
-                "missing required blueprint `version` attribute",
-            ));
-        }
-    }
 
-    match &blueprint.name {
-        Some(name) if name.value.is_empty() => {
+        if let Some(version) = &blueprint.min_achitek_version
+            && !version.value.is_empty()
+            && !is_version_like(&version.value)
+        {
             diagnostics.push(Diagnostic::new(
-                DiagnosticCode::EmptyBlueprintName,
-                name.range,
+                DiagnosticCode::InvalidMinimumAchitekVersion,
+                version.range,
             ));
         }
-        Some(_) => {}
-        None => {
-            diagnostics.push(Diagnostic::with_message(
-                DiagnosticCode::MissingBlueprintName,
-                blueprint_range,
-                "missing required blueprint `name` attribute",
-            ));
-        }
-    }
-
-    if let Some(version) = &blueprint.version
-        && !version.value.is_empty()
-        && !is_version_like(&version.value)
-    {
-        diagnostics.push(Diagnostic::new(
-            DiagnosticCode::InvalidBlueprintVersion,
-            version.range,
-        ));
-    }
-
-    if let Some(version) = &blueprint.min_achitek_version
-        && !version.value.is_empty()
-        && !is_version_like(&version.value)
-    {
-        diagnostics.push(Diagnostic::new(
-            DiagnosticCode::InvalidMinimumAchitekVersion,
-            version.range,
-        ));
     }
 
     let mut seen_prompt_names = HashSet::new();
@@ -377,6 +365,21 @@ fn collect_choice_diagnostics(
     range: TextRange,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
+    if prompt.choices_declared && prompt.choices.is_empty() {
+        match prompt_type {
+            PromptType::Select | PromptType::MultiSelect => {
+                diagnostics.push(Diagnostic::new(DiagnosticCode::EmptyChoicesList, range));
+            }
+            PromptType::String | PromptType::Paragraph | PromptType::Bool => {
+                diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::ChoicesOnNonChoicePrompt,
+                    range,
+                ));
+            }
+        }
+        return;
+    }
+
     match prompt_type {
         PromptType::Select if prompt.choices.is_empty() => {
             diagnostics.push(Diagnostic::new(
@@ -391,18 +394,21 @@ fn collect_choice_diagnostics(
             ));
         }
         PromptType::String | PromptType::Paragraph | PromptType::Bool
-            if !prompt.choices.is_empty() =>
+            if prompt.choices_declared =>
         {
             diagnostics.push(Diagnostic::new(
                 DiagnosticCode::ChoicesOnNonChoicePrompt,
                 range,
             ));
+            return;
         }
         _ => {}
     }
 
-    if prompt.choices_declared && prompt.choices.is_empty() {
-        diagnostics.push(Diagnostic::new(DiagnosticCode::EmptyChoicesList, range));
+    if matches!(
+        prompt_type,
+        PromptType::String | PromptType::Paragraph | PromptType::Bool
+    ) {
         return;
     }
 
@@ -795,7 +801,9 @@ fn missing_node_code(node: Node<'_>) -> DiagnosticCode {
     }
 }
 
-fn error_node_code(node: Node<'_>) -> DiagnosticCode {
+fn error_node_code(node: Node<'_>, source: &str) -> DiagnosticCode {
+    let node_text = text(node, source);
+
     match node.parent().map(|parent| parent.kind()) {
         Some("array" | "value_list") => DiagnosticCode::MalformedArray,
         Some("string_literal") => DiagnosticCode::InvalidEscapeSequence,
@@ -808,8 +816,25 @@ fn error_node_code(node: Node<'_>) -> DiagnosticCode {
         Some("blueprint_block" | "blueprint_attribute") => {
             DiagnosticCode::UnknownBlueprintAttribute
         }
+        Some("prompt_block" | "question_attribute") if node_text.trim_start().starts_with('.') => {
+            DiagnosticCode::UnknownDependencyMethod
+        }
         Some("prompt_block" | "question_attribute") => DiagnosticCode::UnknownPromptAttribute,
         Some("validate_block" | "validate_attribute") => DiagnosticCode::UnknownValidateAttribute,
+        Some("file") if node_text.trim_start().starts_with("prompt {") => {
+            DiagnosticCode::MissingPromptName
+        }
         _ => DiagnosticCode::UnknownTopLevelItem,
     }
+}
+
+fn starts_with_keyword(text: &str, keyword: &str) -> bool {
+    let text = text.trim_start();
+    let Some(rest) = text.strip_prefix(keyword) else {
+        return false;
+    };
+
+    rest.chars()
+        .next()
+        .is_none_or(|ch| !ch.is_ascii_alphanumeric() && ch != '_')
 }

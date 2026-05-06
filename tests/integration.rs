@@ -66,6 +66,16 @@ mod analysis {
         );
     }
 
+    fn assert_does_not_report(source: &str, unexpected: DiagnosticCode) {
+        let actual = diagnostic_codes(source);
+        assert!(
+            !actual.contains(&unexpected.as_str()),
+            "unexpected diagnostic code {} in {:?}",
+            unexpected.as_str(),
+            actual
+        );
+    }
+
     macro_rules! diagnostic_test {
         ($name:ident, $code:expr, $source:expr) => {
             #[test]
@@ -537,6 +547,25 @@ mod analysis {
         "#}
     );
 
+    #[test]
+    fn empty_choices_for_select_reports_empty_choices_only() {
+        let source = indoc! {r#"
+            blueprint {
+              version = "1.0.0"
+              name = "web-app"
+            }
+
+            prompt "kind" {
+              type = select
+              choices = []
+            }
+        "#};
+        let actual = diagnostic_codes(source);
+
+        assert!(actual.contains(&DiagnosticCode::EmptyChoicesList.as_str()));
+        assert!(!actual.contains(&DiagnosticCode::MissingChoicesForSelect.as_str()));
+    }
+
     diagnostic_test!(
         reports_duplicate_choice,
         DiagnosticCode::DuplicateChoice,
@@ -948,6 +977,62 @@ mod analysis {
 
         assert!(analysis.diagnostics().is_empty());
         assert!(!analysis.has_errors());
+    }
+
+    #[test]
+    fn keywords_in_strings_do_not_trigger_file_shape_diagnostics() {
+        let source = indoc! {r#"
+            blueprint {
+              version = "1.0.0"
+              name = "web-app"
+              description = "prompt { blueprint"
+            }
+
+            prompt "blueprint" {
+              type = string
+              help = "prompt {"
+            }
+        "#};
+
+        assert_does_not_report(source, DiagnosticCode::MultipleBlueprintBlocks);
+        assert_does_not_report(source, DiagnosticCode::PromptBeforeBlueprint);
+        assert_does_not_report(source, DiagnosticCode::MissingPromptName);
+    }
+
+    #[test]
+    fn includes_in_string_does_not_trigger_unknown_dependency_method() {
+        let source = indoc! {r#"
+            blueprint {
+              version = "1.0.0"
+              name = "web-app"
+            }
+
+            prompt "project" {
+              type = string
+              help = "JavaScript has .includes("
+            }
+        "#};
+
+        assert_does_not_report(source, DiagnosticCode::UnknownDependencyMethod);
+    }
+
+    #[test]
+    fn empty_choices_on_non_choice_prompt_reports_non_choice_usage_only() {
+        let source = indoc! {r#"
+            blueprint {
+              version = "1.0.0"
+              name = "web-app"
+            }
+
+            prompt "project" {
+              type = string
+              choices = []
+            }
+        "#};
+        let actual = diagnostic_codes(source);
+
+        assert!(actual.contains(&DiagnosticCode::ChoicesOnNonChoicePrompt.as_str()));
+        assert!(!actual.contains(&DiagnosticCode::EmptyChoicesList.as_str()));
     }
 
     #[test]
