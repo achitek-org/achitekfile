@@ -160,6 +160,29 @@
 /// map into their own reporting formats. For example, `achitek-ls` can convert
 /// this type into an LSP diagnostic without defining its own Achitekfile
 /// diagnostic codes.
+///
+/// # Examples
+///
+/// ```
+/// let source = r#"
+/// blueprint {
+///   version = "1.0.0"
+///   name = "web-app"
+/// }
+///
+/// prompt "project_name" {
+///   help = "Project name"
+/// }
+/// "#;
+///
+/// let analysis = achitekfile::analyze(source)?;
+/// let diagnostic = &analysis.diagnostics()[0];
+///
+/// assert_eq!(diagnostic.code(), achitekfile::DiagnosticCode::MissingPromptType);
+/// assert_eq!(diagnostic.severity(), achitekfile::Severity::Error);
+/// assert_eq!(diagnostic.kind(), achitekfile::DiagnosticKind::Semantic);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Diagnostic {
@@ -240,6 +263,9 @@ impl Diagnostic {
 /// The kind describes which analysis layer produced a diagnostic. It is useful
 /// for grouping diagnostics in docs and tests, while [`DiagnosticCode`] remains
 /// the stable identifier for a specific violation.
+///
+/// See [`Diagnostic`] for an example of reading a diagnostic kind from analysis
+/// output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DiagnosticKind {
@@ -258,6 +284,8 @@ pub enum DiagnosticKind {
 /// Codes are part of the public diagnostic contract for downstream tools. Once
 /// released, a code should keep the same meaning. Prefer adding a new code over
 /// reusing or renumbering an existing one.
+///
+/// See [`Diagnostic`] for an example of matching on a stable diagnostic code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DiagnosticCode {
@@ -686,6 +714,8 @@ impl DiagnosticCode {
 /// Severity indicates how tools should present a diagnostic. Errors describe
 /// invalid source that should prevent normal execution. Warnings describe
 /// suspicious but still analyzable source. Hints provide low-priority guidance.
+///
+/// See [`Diagnostic`] for an example of reading diagnostic severity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Severity {
@@ -706,6 +736,15 @@ pub enum Severity {
 /// This type is independent of LSP positions. Language-server consumers should
 /// convert `byte` into the negotiated LSP position encoding before publishing
 /// diagnostics or other ranges to an editor.
+///
+/// # Examples
+///
+/// ```
+/// let position = achitekfile::TextPosition { line: 3, byte: 12 };
+///
+/// assert_eq!(position.line, 3);
+/// assert_eq!(position.byte, 12);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TextPosition {
@@ -723,6 +762,22 @@ pub struct TextPosition {
 /// diagnostics, symbols, prompt names, attributes, and other source elements
 /// after converting into their presentation protocol's expected position
 /// encoding.
+///
+/// # Examples
+///
+/// ```
+/// let source = r#"
+/// prompt "project_name" {
+///   type = string
+/// }
+/// "#;
+///
+/// let analysis = achitekfile::analyze(source)?;
+/// let range = analysis.diagnostics()[0].range();
+///
+/// assert!(range.start <= range.end);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TextRange {

@@ -44,6 +44,28 @@ use std::{collections::HashMap, vec};
 ///
 /// Spans let editor-facing consumers connect recovered model values back to the
 /// original source text without exposing Tree-sitter nodes.
+///
+/// # Examples
+///
+/// ```
+/// let source = r#"
+/// blueprint {
+///   version = "1.0.0"
+///   name = "web-app"
+/// }
+/// "#;
+///
+/// let analysis = achitekfile::analyze(source)?;
+/// let version = analysis
+///     .file()
+///     .blueprint()
+///     .version
+///     .as_ref()
+///     .map(|spanned| spanned.as_ref().as_str());
+///
+/// assert_eq!(version, Some("1.0.0"));
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Spanned<T> {
@@ -70,6 +92,8 @@ impl<T> AsMut<T> for Spanned<T> {
 /// The recovering model keeps fields optional because invalid source may omit
 /// required blueprint attributes. A later validation step can turn this into a
 /// [`ValidBlueprint`] once required fields are known to be present.
+///
+/// See [`AchitekFile`] for an example of reading recovered blueprint metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Blueprint {
@@ -91,7 +115,29 @@ pub struct Blueprint {
     pub min_achitek_version: Option<Spanned<String>>,
 }
 
-/// Semantic representation of a achitekfile.
+/// Semantic representation of an Achitekfile.
+///
+/// # Examples
+///
+/// ```
+/// let source = r#"
+/// blueprint {
+///   version = "1.0.0"
+///   name = "web-app"
+/// }
+///
+/// prompt "project_name" {
+///   type = string
+/// }
+/// "#;
+///
+/// let analysis = achitekfile::analyze(source)?;
+/// let file = analysis.file();
+///
+/// assert_eq!(file.blueprint().name.as_ref().map(|name| name.value.as_str()), Some("web-app"));
+/// assert_eq!(file.prompts()[0].value.name, "project_name");
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AchitekFile {
@@ -101,20 +147,28 @@ pub struct AchitekFile {
 
 impl AchitekFile {
     /// Creates a recovering Achitekfile model from parsed parts.
+    ///
+    /// See [`AchitekFile`] for a parsing-oriented example.
     pub fn new(blueprint: Blueprint, prompts: Vec<Spanned<Prompt>>) -> Self {
         Self { blueprint, prompts }
     }
     /// Returns recovered blueprint metadata.
+    ///
+    /// See [`AchitekFile`] for a complete example.
     pub fn blueprint(&self) -> &Blueprint {
         &self.blueprint
     }
     /// Returns recovered prompts in source order.
+    ///
+    /// See [`AchitekFile`] for a complete example.
     pub fn prompts(&self) -> &[Spanned<Prompt>] {
         &self.prompts
     }
 }
 
 /// A parsed prompt declaration from an Achitekfile.
+///
+/// See [`AchitekFile`] for an example that reads recovered prompts.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Prompt {
@@ -151,6 +205,8 @@ pub struct Prompt {
 }
 
 /// The supported prompt input types.
+///
+/// See [`Prompt`] for the containing model type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PromptType {
@@ -167,6 +223,8 @@ pub enum PromptType {
 }
 
 /// A literal or identifier value parsed from an Achitekfile.
+///
+/// See [`Prompt`] for an example of values attached to parsed prompts.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Value {
@@ -191,6 +249,9 @@ pub enum Value {
 /// - `database != "none"`
 /// - `features.contains("auth")`
 /// - `all(database != "none", features.contains("auth"))`
+///
+/// See [`ValidAchitekFile::prompts_in`] for an example of using dependencies
+/// to order prompts.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Dependency {
@@ -239,6 +300,8 @@ impl Dependency {
 }
 
 /// Operators supported by comparison dependencies.
+///
+/// See [`Dependency`] for the comparison expression that uses this operator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ComparisonOperator {
@@ -253,6 +316,9 @@ pub enum ComparisonOperator {
 /// These fields correspond to attributes inside a `validate { ... }` block.
 /// The parser records what the file declares; it does not currently enforce
 /// whether a given rule is appropriate for the prompt type.
+///
+/// See [`Prompt`] and [`ValidPrompt`] for examples of prompts that carry
+/// validation rules.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Validation {
@@ -274,6 +340,34 @@ pub struct Validation {
 /// already passed syntax and semantic validation. Unlike [`AchitekFile`], it
 /// does not expose partial or optional structure for required concepts: a valid
 /// file always has a blueprint and every prompt has a complete prompt type.
+///
+/// # Examples
+///
+/// ```
+/// let source = r#"
+/// blueprint {
+///   version = "1.0.0"
+///   name = "web-app"
+/// }
+///
+/// prompt "database" {
+///   type = select
+///   choices = ["postgres", "sqlite"]
+/// }
+/// "#;
+///
+/// let file = achitekfile::analyze(source)?.into_valid().map_err(|diagnostics| {
+///     let message = diagnostics
+///         .into_iter()
+///         .map(|diagnostic| diagnostic.message().to_owned())
+///         .collect::<Vec<_>>()
+///         .join(", ");
+///     std::io::Error::new(std::io::ErrorKind::InvalidData, message)
+/// })?;
+///
+/// assert_eq!(file.prompts()[0].prompt_type, achitekfile::model::PromptType::Select);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ValidAchitekFile {
@@ -283,21 +377,65 @@ pub struct ValidAchitekFile {
 
 impl ValidAchitekFile {
     /// Creates a valid Achitekfile model from already validated parts.
+    ///
+    /// See [`ValidAchitekFile`] for a validation-oriented example.
     pub fn new(blueprint: ValidBlueprint, prompts: Vec<ValidPrompt>) -> Self {
         Self { blueprint, prompts }
     }
 
     /// Returns the validated blueprint metadata.
+    ///
+    /// See [`ValidAchitekFile`] for a complete example.
     pub fn blueprint(&self) -> &ValidBlueprint {
         &self.blueprint
     }
 
     /// Returns validated prompts in source order.
+    ///
+    /// See [`ValidAchitekFile`] for a complete example.
     pub fn prompts(&self) -> &[ValidPrompt] {
         &self.prompts
     }
 
     /// Returns validated prompts in the requested order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let source = r#"
+    /// blueprint {
+    ///   version = "1.0.0"
+    ///   name = "web-app"
+    /// }
+    ///
+    /// prompt "orm" {
+    ///   type = select
+    ///   choices = ["sqlx", "diesel"]
+    ///   depends_on = database != "sqlite"
+    /// }
+    ///
+    /// prompt "database" {
+    ///   type = select
+    ///   choices = ["postgres", "sqlite"]
+    /// }
+    /// "#;
+    ///
+    /// let file = achitekfile::analyze(source)?.into_valid().map_err(|diagnostics| {
+    ///     let message = diagnostics
+    ///         .into_iter()
+    ///         .map(|diagnostic| diagnostic.message().to_owned())
+    ///         .collect::<Vec<_>>()
+    ///         .join(", ");
+    ///     std::io::Error::new(std::io::ErrorKind::InvalidData, message)
+    /// })?;
+    /// let ordered_names = file
+    ///     .prompts_in(achitekfile::model::PromptOrder::Dependency)?
+    ///     .map(|prompt| prompt.name.as_str())
+    ///     .collect::<Vec<_>>();
+    ///
+    /// assert_eq!(ordered_names, ["database", "orm"]);
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     pub fn prompts_in(&self, order: PromptOrder) -> Result<PromptIter<'_>, SortError<String>> {
         match order {
             PromptOrder::Source => Ok(PromptIter::Source(self.prompts.iter())),
@@ -343,6 +481,8 @@ impl ValidAchitekFile {
 }
 
 /// Ordering strategy for validated prompts.
+///
+/// See [`ValidAchitekFile::prompts_in`] for an example.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PromptOrder {
@@ -353,6 +493,8 @@ pub enum PromptOrder {
 }
 
 /// Iterator over validated prompts.
+///
+/// See [`ValidAchitekFile::prompts_in`] for an example.
 #[derive(Debug, Clone)]
 pub enum PromptIter<'a> {
     /// Iterates over prompts in source order without allocating.
@@ -373,6 +515,9 @@ impl<'a> Iterator for PromptIter<'a> {
 }
 
 /// Validated blueprint metadata.
+///
+/// See [`ValidAchitekFile`] for an example that reads validated blueprint
+/// metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ValidBlueprint {
@@ -389,6 +534,8 @@ pub struct ValidBlueprint {
 }
 
 /// A validated prompt declaration.
+///
+/// See [`ValidAchitekFile`] for an example that reads validated prompts.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ValidPrompt {
