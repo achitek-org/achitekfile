@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod from_str {
+mod parse_tree {
     use indoc::indoc;
 
     #[test]
