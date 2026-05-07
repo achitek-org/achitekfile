@@ -322,13 +322,11 @@ pub enum SortError<Node> {
 }
 
 impl<Node> std::error::Error for SortError<Node> where
-    Node: Clone + Ord + core::fmt::Display + core::fmt::Debug
+    Node: core::fmt::Debug + core::fmt::Display
 {
 }
 
-impl<Node: Clone + Ord + std::fmt::Display + std::fmt::Debug> std::fmt::Display
-    for SortError<Node>
-{
+impl<Node: std::fmt::Display> std::fmt::Display for SortError<Node> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             SortError::CycleDetected(cycles) => {
