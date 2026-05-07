@@ -97,14 +97,6 @@ impl AchitekFile {
     pub fn prompts(&self) -> &[Spanned<Prompt>] {
         &self.prompts
     }
-    /// Replaces recovered blueprint metadata.
-    pub fn set_blueprint(&mut self, blueprint: Blueprint) {
-        self.blueprint = blueprint;
-    }
-    /// Replaces recovered prompts.
-    pub fn set_prompts(&mut self, prompts: Vec<Spanned<Prompt>>) {
-        self.prompts = prompts;
-    }
 }
 
 /// A parsed prompt declaration from an Achitekfile.
