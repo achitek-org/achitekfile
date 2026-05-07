@@ -37,7 +37,9 @@
 //! ```
 //!
 //! `achitekfile` wraps the [tree-sitter-achitekfile] grammar and exposes a
-//! small semantic API over the concrete Tree-sitter syntax tree.
+//! small semantic API over the concrete Tree-sitter syntax tree. Start with
+//! [`analyze`] for semantic analysis or [`parse_tree`] if you need direct
+//! Tree-sitter access.
 //!
 //! [tree-sitter-achitekfile]: https://docs.rs/tree-sitter-achitekfile/0.1.0/tree_sitter_achitekfile/
 

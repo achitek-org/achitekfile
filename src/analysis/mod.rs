@@ -3,7 +3,7 @@
 //!
 //! The API is forgiving in that the exposed [`AnalysisError`]
 //! is reserved for infrastructure failures only; if errors are
-//! detected, they are returned as structured diagnostics.
+//! detected, they are returned as structured [`Diagnostic`] values.
 
 mod build_model;
 mod diagnostics;
@@ -128,7 +128,7 @@ impl<'a> Analysis<'a> {
 /// Errors that prevent Achitekfile analysis from running.
 ///
 /// Normal source violations are returned as diagnostics in [`Analysis`], not as
-/// `AnalysisError`.
+/// [`AnalysisError`].
 ///
 /// See [`analyze`] for an example of the distinction between fatal analysis
 /// errors and recoverable Achitekfile diagnostics.
