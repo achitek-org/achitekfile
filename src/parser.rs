@@ -24,7 +24,7 @@ use tree_sitter::{Language, Parser, Tree};
 /// }
 /// "#;
 ///
-/// let tree = achitekfile::from_str(source)?;
+/// let tree = achitekfile::parse_tree(source)?;
 ///
 /// assert_eq!(tree.root_node().kind(), "file");
 /// # Ok::<(), Box<dyn std::error::Error>>(())
