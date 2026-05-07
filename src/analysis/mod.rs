@@ -79,7 +79,7 @@ pub enum AnalysisError {
 /// returns an error when the parser cannot be configured or Tree-sitter does not
 /// produce a parse tree.
 pub fn analyze(source: &str) -> Result<Analysis<'_>, AnalysisError> {
-    let tree = parser::from_str(source)?;
+    let tree = parser::parse_tree(source)?;
     let file = build_file(&tree, source);
     let diagnostics = collect_diagnostics(&tree, source, &file);
 
