@@ -161,6 +161,7 @@
 /// this type into an LSP diagnostic without defining its own Achitekfile
 /// diagnostic codes.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Diagnostic {
     /// Stable identifier for this class of diagnostic.
     code: DiagnosticCode,
@@ -240,6 +241,7 @@ impl Diagnostic {
 /// for grouping diagnostics in docs and tests, while [`DiagnosticCode`] remains
 /// the stable identifier for a specific violation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DiagnosticKind {
     /// A syntax or parse violation in the source text.
     Syntax,
@@ -257,6 +259,7 @@ pub enum DiagnosticKind {
 /// released, a code should keep the same meaning. Prefer adding a new code over
 /// reusing or renumbering an existing one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DiagnosticCode {
     /// `ACH0000`: the file does not contain the required `blueprint` block.
     MissingBlueprintBlock,
@@ -684,6 +687,7 @@ impl DiagnosticCode {
 /// invalid source that should prevent normal execution. Warnings describe
 /// suspicious but still analyzable source. Hints provide low-priority guidance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Severity {
     /// Invalid source that should prevent normal execution.
     Error,
@@ -703,6 +707,7 @@ pub enum Severity {
 /// convert `byte` into the negotiated LSP position encoding before publishing
 /// diagnostics or other ranges to an editor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TextPosition {
     /// Zero-based line number.
     pub line: usize,
@@ -719,6 +724,7 @@ pub struct TextPosition {
 /// after converting into their presentation protocol's expected position
 /// encoding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TextRange {
     /// Start position of the range.
     pub start: TextPosition,
