@@ -31,6 +31,7 @@ pub type AdjacencyList<Node> = Vec<(Node, Node)>;
 /// order for independent nodes. `edges` defines ordering constraints between
 /// those nodes.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Graph<Node> {
     /// All nodes in the graph.
     pub nodes: Vec<Node>,
@@ -43,6 +44,7 @@ pub struct Graph<Node> {
 /// `sorted` is present only when the graph has no cycles. `cycles` contains
 /// strongly connected components that make a topological order impossible.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GraphAnalysis<Node> {
     /// Valid topological order when the graph is acyclic.
     pub sorted: Option<Vec<Node>>,
@@ -57,6 +59,7 @@ pub struct GraphAnalysis<Node> {
 /// `nodes`. For a self-dependency, `nodes` contains one node and `edges`
 /// contains the self edge.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cycle<Node> {
     /// Nodes participating in the cycle.
     pub nodes: Vec<Node>,
@@ -309,6 +312,7 @@ fn component_to_cycle<Node: std::hash::Hash + Eq + Clone>(
 
 /// Errors that can occur during topological sorting.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SortError<Node> {
     /// A cycle was detected in the graph, making topological sorting impossible.
     ///
