@@ -97,6 +97,11 @@ pub fn analyze_graph<Node: std::hash::Hash + Eq + Clone>(
 /// The implementation is deterministic: when multiple nodes are available to
 /// emit, they are considered in the order they appear in [`Graph::nodes`].
 ///
+/// # Errors
+///
+/// Returns [`SortError::CycleDetected`] if the graph contains one or more
+/// cycles.
+///
 /// # Examples
 ///
 /// ```ignore

@@ -399,6 +399,11 @@ impl ValidAchitekFile {
 
     /// Returns validated prompts in the requested order.
     ///
+    /// # Errors
+    ///
+    /// Returns [`SortError::CycleDetected`] when dependency ordering is
+    /// requested and the prompt dependency graph contains a cycle.
+    ///
     /// # Examples
     ///
     /// ```
