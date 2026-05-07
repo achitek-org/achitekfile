@@ -84,6 +84,11 @@ impl<'a> Analysis<'a> {
     /// returned diagnostics describe why the source cannot be treated as a
     /// valid executable Achitekfile.
     ///
+    /// # Errors
+    ///
+    /// Returns the collected diagnostics when the analyzed source contains any
+    /// error-severity diagnostics.
+    ///
     /// # Examples
     ///
     /// ```
@@ -139,6 +144,12 @@ pub enum AnalysisError {
 /// Syntax errors in the source are collected as diagnostics. This function only
 /// returns an error when the parser cannot be configured or Tree-sitter does not
 /// produce a parse tree.
+///
+/// # Errors
+///
+/// Returns [`AnalysisError::Parse`] if low-level Tree-sitter parsing cannot be
+/// started or does not produce a parse tree. Invalid Achitekfile source is
+/// reported through [`Analysis::diagnostics`] instead of this error type.
 ///
 /// # Examples
 ///
