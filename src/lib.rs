@@ -41,4 +41,4 @@ pub use analysis::{Analysis, AnalysisError, analyze};
 pub use diagnostics::{
     Diagnostic, DiagnosticCode, DiagnosticKind, Severity, TextPosition, TextRange,
 };
-pub use parser::{ParseError, from_str};
+pub use parser::{ParseError, parse_tree};

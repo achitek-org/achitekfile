@@ -15,7 +15,7 @@ mod from_str {
             }
         "#};
 
-        let tree = achitekfile::from_str(source).expect("expected source to parse");
+        let tree = achitekfile::parse_tree(source).expect("expected source to parse");
         let root = tree.root_node();
 
         assert_eq!(root.kind(), "file");
@@ -31,7 +31,7 @@ mod from_str {
             }
         "#};
 
-        let tree = achitekfile::from_str(source).expect("expected tree-sitter to recover a tree");
+        let tree = achitekfile::parse_tree(source).expect("expected tree-sitter to recover a tree");
         let root = tree.root_node();
 
         assert_eq!(root.kind(), "file");
