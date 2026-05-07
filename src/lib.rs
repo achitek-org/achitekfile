@@ -4,24 +4,36 @@
 //!
 //! ```
 //! let source = r#"
-//!     blueprint {
-//!         version = "1.0.0"
-//!         name = "web-app"
-//!     }
+//! blueprint {
+//!   version = "1.0.0"
+//!   name = "web-app"
+//! }
 //!
-//!     prompt "database" {
-//!         type = select
-//!         choices = ["postgres", "sqlite"]
-//!         default = "postgres"
-//!     }
+//! prompt "database" {
+//!   type = select
+//!   choices = ["postgres", "sqlite"]
+//!   default = "postgres"
+//! }
 //!
-//!     prompt "orm" {
-//!         type = select
-//!         choices = ["sqlx", "diesel"]
-//!         depends_on = database != "sqlite"
-//!     }
+//! prompt "orm" {
+//!   type = select
+//!   choices = ["sqlx", "diesel"]
+//!   depends_on = database != "sqlite"
+//! }
 //! "#;
 //!
+//! let file = achitekfile::analyze(source)?.into_valid().map_err(|diagnostics| {
+//!     let message = diagnostics
+//!         .into_iter()
+//!         .map(|diagnostic| diagnostic.message().to_owned())
+//!         .collect::<Vec<_>>()
+//!         .join(", ");
+//!     std::io::Error::new(std::io::ErrorKind::InvalidData, message)
+//! })?;
+//!
+//! assert_eq!(file.blueprint().name, "web-app");
+//! assert_eq!(file.prompts().len(), 2);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! `achitekfile` wraps the [tree-sitter-achitekfile] grammar and exposes a

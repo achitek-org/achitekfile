@@ -47,6 +47,9 @@ pub fn parse_tree(source: &str) -> Result<Tree, ParseError> {
 }
 
 /// Errors that can occur while parsing source text into a Tree-sitter [`Tree`].
+///
+/// See [`parse_tree`] for an example of handling parser setup and Tree-sitter
+/// parse failures with `?`.
 #[derive(Debug, Error)]
 pub enum ParseError {
     /// The Achitek grammar could not be installed into the parser.

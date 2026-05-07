@@ -19,6 +19,27 @@ use super::{
 use thiserror::Error;
 
 /// A forgiving analysis result for Achitekfile source.
+///
+/// # Examples
+///
+/// ```
+/// let source = r#"
+/// blueprint {
+///   version = "1.0.0"
+///   name = "web-app"
+/// }
+///
+/// prompt "project_name" {
+///   type = string
+/// }
+/// "#;
+///
+/// let analysis = achitekfile::analyze(source)?;
+///
+/// assert!(!analysis.has_errors());
+/// assert_eq!(analysis.file().prompts().len(), 1);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[derive(Debug, Clone)]
 pub struct Analysis<'a> {
     source: &'a str,
@@ -27,21 +48,29 @@ pub struct Analysis<'a> {
 }
 impl<'a> Analysis<'a> {
     /// Returns the source text analyzed by this result.
+    ///
+    /// See [`analyze`] for a complete example.
     pub fn source(&self) -> &'a str {
         self.source
     }
 
     /// Returns the recovered Achitekfile model.
+    ///
+    /// See [`analyze`] for a complete example.
     pub fn file(&self) -> &AchitekFile {
         &self.file
     }
 
     /// Returns diagnostics discovered while analyzing the source.
+    ///
+    /// See [`analyze`] for a complete example.
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }
 
     /// Returns true when any diagnostic has error severity.
+    ///
+    /// See [`analyze`] for a complete example.
     pub fn has_errors(&self) -> bool {
         self.diagnostics
             .iter()
@@ -54,6 +83,34 @@ impl<'a> Analysis<'a> {
     /// recovered model contains the required runtime fields. On failure, the
     /// returned diagnostics describe why the source cannot be treated as a
     /// valid executable Achitekfile.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let source = r#"
+    /// blueprint {
+    ///   version = "1.0.0"
+    ///   name = "web-app"
+    /// }
+    ///
+    /// prompt "database" {
+    ///   type = select
+    ///   choices = ["postgres", "sqlite"]
+    /// }
+    /// "#;
+    ///
+    /// let file = achitekfile::analyze(source)?.into_valid().map_err(|diagnostics| {
+    ///     let message = diagnostics
+    ///         .into_iter()
+    ///         .map(|diagnostic| diagnostic.message().to_owned())
+    ///         .collect::<Vec<_>>()
+    ///         .join(", ");
+    ///     std::io::Error::new(std::io::ErrorKind::InvalidData, message)
+    /// })?;
+    ///
+    /// assert_eq!(file.blueprint().name, "web-app");
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     pub fn into_valid(self) -> Result<ValidAchitekFile, Vec<Diagnostic>> {
         if self.has_errors() {
             return Err(self.diagnostics);
@@ -67,6 +124,9 @@ impl<'a> Analysis<'a> {
 ///
 /// Normal source violations are returned as diagnostics in [`Analysis`], not as
 /// `AnalysisError`.
+///
+/// See [`analyze`] for an example of the distinction between fatal analysis
+/// errors and recoverable Achitekfile diagnostics.
 #[derive(Debug, Error)]
 pub enum AnalysisError {
     /// The source could not be parsed into a Tree-sitter tree.
@@ -79,6 +139,32 @@ pub enum AnalysisError {
 /// Syntax errors in the source are collected as diagnostics. This function only
 /// returns an error when the parser cannot be configured or Tree-sitter does not
 /// produce a parse tree.
+///
+/// # Examples
+///
+/// ```
+/// let source = r#"
+/// blueprint {
+///   version = "1.0.0"
+///   name = "web-app"
+/// }
+///
+/// prompt "project_name" {
+///   help = "Project name"
+/// }
+/// "#;
+///
+/// let analysis = achitekfile::analyze(source)?;
+/// let messages = analysis
+///     .diagnostics()
+///     .iter()
+///     .map(|diagnostic| diagnostic.message())
+///     .collect::<Vec<_>>();
+///
+/// assert!(analysis.has_errors());
+/// assert!(messages.contains(&"missing prompt type"));
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 pub fn analyze(source: &str) -> Result<Analysis<'_>, AnalysisError> {
     let tree = parser::parse_tree(source)?;
     let file = build_file(&tree, source);
