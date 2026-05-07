@@ -52,6 +52,18 @@ pub struct Spanned<T> {
     pub range: TextRange,
 }
 
+impl<T> AsRef<T> for Spanned<T> {
+    fn as_ref(&self) -> &T {
+        &self.value
+    }
+}
+
+impl<T> AsMut<T> for Spanned<T> {
+    fn as_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+}
+
 /// Recovering blueprint metadata.
 ///
 /// The recovering model keeps fields optional because invalid source may omit
