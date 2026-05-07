@@ -1,8 +1,11 @@
 [package]
 name = "achitekfile"
+authors = ["Samuel Joli <samuel.joli.ftn@gmail.com"]
 description = "A tree-sitter backed semantic parser for the Achitekfile DSL"
 repository = "https://github.com/achitek-org/achitekfile"
-license = "MIT"
+keywords = ["achitek", "parser", "tree-sitter", "dsl", "diagnostics"]
+categories = ["parser-implementations", "development-tools"]
+license = "MIT OR Apache-2.0"
 version = "0.1.0"
 edition = "2024"
 
