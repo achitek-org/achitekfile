@@ -44,7 +44,7 @@ use std::{collections::HashMap, vec};
 ///
 /// Spans let editor-facing consumers connect recovered model values back to the
 /// original source text without exposing Tree-sitter nodes.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Spanned<T> {
     /// Recovered model value.
     pub value: T,
@@ -57,7 +57,7 @@ pub struct Spanned<T> {
 /// The recovering model keeps fields optional because invalid source may omit
 /// required blueprint attributes. A later validation step can turn this into a
 /// [`ValidBlueprint`] once required fields are known to be present.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct Blueprint {
     /// Source range for the recovered `blueprint { ... }` block.
     ///
@@ -78,7 +78,7 @@ pub struct Blueprint {
 }
 
 /// Semantic representation of a achitekfile.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct AchitekFile {
     blueprint: Blueprint,
     prompts: Vec<Spanned<Prompt>>,
@@ -100,7 +100,7 @@ impl AchitekFile {
 }
 
 /// A parsed prompt declaration from an Achitekfile.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Prompt {
     /// The prompt identifier from `prompt "..."`.
     pub name: String,
@@ -135,7 +135,7 @@ pub struct Prompt {
 }
 
 /// The supported prompt input types.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PromptType {
     /// A single-line string answer.
     String,
@@ -150,7 +150,7 @@ pub enum PromptType {
 }
 
 /// A literal or identifier value parsed from an Achitekfile.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Value {
     /// A double-quoted string literal with supported escape sequences decoded.
     String(String),
@@ -173,7 +173,7 @@ pub enum Value {
 /// - `database != "none"`
 /// - `features.contains("auth")`
 /// - `all(database != "none", features.contains("auth"))`
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Dependency {
     /// A direct dependency on another prompt by name, such as `depends_on = database`.
     Reference(String),
@@ -220,7 +220,7 @@ impl Dependency {
 }
 
 /// Operators supported by comparison dependencies.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ComparisonOperator {
     /// Equality, written as `==`.
     Equal,
@@ -233,7 +233,7 @@ pub enum ComparisonOperator {
 /// These fields correspond to attributes inside a `validate { ... }` block.
 /// The parser records what the file declares; it does not currently enforce
 /// whether a given rule is appropriate for the prompt type.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct Validation {
     /// A regular expression that string-like answers must match.
     pub regex: Option<String>,
@@ -253,7 +253,7 @@ pub struct Validation {
 /// already passed syntax and semantic validation. Unlike [`AchitekFile`], it
 /// does not expose partial or optional structure for required concepts: a valid
 /// file always has a blueprint and every prompt has a complete prompt type.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ValidAchitekFile {
     blueprint: ValidBlueprint,
     prompts: Vec<ValidPrompt>,
@@ -321,7 +321,7 @@ impl ValidAchitekFile {
 }
 
 /// Ordering strategy for validated prompts.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PromptOrder {
     /// Preserve the order prompts appeared in the source file.
     Source,
@@ -330,6 +330,7 @@ pub enum PromptOrder {
 }
 
 /// Iterator over validated prompts.
+#[derive(Debug, Clone)]
 pub enum PromptIter<'a> {
     /// Iterates over prompts in source order without allocating.
     Source(std::slice::Iter<'a, ValidPrompt>),
@@ -349,7 +350,7 @@ impl<'a> Iterator for PromptIter<'a> {
 }
 
 /// Validated blueprint metadata.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ValidBlueprint {
     /// Achitekfile format version declared by the blueprint.
     pub version: String,
@@ -364,7 +365,7 @@ pub struct ValidBlueprint {
 }
 
 /// A validated prompt declaration.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ValidPrompt {
     /// The prompt identifier from `prompt "..."`.
     pub name: String,

@@ -160,7 +160,7 @@
 /// map into their own reporting formats. For example, `achitek-ls` can convert
 /// this type into an LSP diagnostic without defining its own Achitekfile
 /// diagnostic codes.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Diagnostic {
     /// Stable identifier for this class of diagnostic.
     code: DiagnosticCode,
@@ -239,7 +239,7 @@ impl Diagnostic {
 /// The kind describes which analysis layer produced a diagnostic. It is useful
 /// for grouping diagnostics in docs and tests, while [`DiagnosticCode`] remains
 /// the stable identifier for a specific violation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DiagnosticKind {
     /// A syntax or parse violation in the source text.
     Syntax,
@@ -256,7 +256,7 @@ pub enum DiagnosticKind {
 /// Codes are part of the public diagnostic contract for downstream tools. Once
 /// released, a code should keep the same meaning. Prefer adding a new code over
 /// reusing or renumbering an existing one.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DiagnosticCode {
     /// `ACH0000`: the file does not contain the required `blueprint` block.
     MissingBlueprintBlock,
@@ -683,7 +683,7 @@ impl DiagnosticCode {
 /// Severity indicates how tools should present a diagnostic. Errors describe
 /// invalid source that should prevent normal execution. Warnings describe
 /// suspicious but still analyzable source. Hints provide low-priority guidance.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Severity {
     /// Invalid source that should prevent normal execution.
     Error,
@@ -702,7 +702,7 @@ pub enum Severity {
 /// This type is independent of LSP positions. Language-server consumers should
 /// convert `byte` into the negotiated LSP position encoding before publishing
 /// diagnostics or other ranges to an editor.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TextPosition {
     /// Zero-based line number.
     pub line: usize,
@@ -718,7 +718,7 @@ pub struct TextPosition {
 /// diagnostics, symbols, prompt names, attributes, and other source elements
 /// after converting into their presentation protocol's expected position
 /// encoding.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TextRange {
     /// Start position of the range.
     pub start: TextPosition,

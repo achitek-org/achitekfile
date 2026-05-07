@@ -30,7 +30,7 @@ pub type AdjacencyList<Node> = Vec<(Node, Node)>;
 /// `nodes` defines both the complete node set and the deterministic tie-breaker
 /// order for independent nodes. `edges` defines ordering constraints between
 /// those nodes.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Graph<Node> {
     /// All nodes in the graph.
     pub nodes: Vec<Node>,
@@ -42,7 +42,7 @@ pub struct Graph<Node> {
 ///
 /// `sorted` is present only when the graph has no cycles. `cycles` contains
 /// strongly connected components that make a topological order impossible.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GraphAnalysis<Node> {
     /// Valid topological order when the graph is acyclic.
     pub sorted: Option<Vec<Node>>,
@@ -56,7 +56,7 @@ pub struct GraphAnalysis<Node> {
 /// field contains the original graph edges where both endpoints are in
 /// `nodes`. For a self-dependency, `nodes` contains one node and `edges`
 /// contains the self edge.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Cycle<Node> {
     /// Nodes participating in the cycle.
     pub nodes: Vec<Node>,
@@ -308,7 +308,7 @@ fn component_to_cycle<Node: std::hash::Hash + Eq + Clone>(
 }
 
 /// Errors that can occur during topological sorting.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SortError<Node> {
     /// A cycle was detected in the graph, making topological sorting impossible.
     ///
