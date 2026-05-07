@@ -203,27 +203,32 @@ impl Diagnostic {
         }
     }
 
-    /// Getter for code field
+    /// Returns the stable diagnostic code.
     pub fn code(&self) -> DiagnosticCode {
         self.code
     }
-    /// Getter for severity field
+
+    /// Returns how strongly tooling should surface this diagnostic.
     pub fn severity(&self) -> Severity {
         self.severity
     }
-    /// Getter for message field
+
+    /// Returns the user-facing diagnostic message.
     pub fn message(&self) -> &str {
         &self.message
     }
-    /// Getter for help field
+
+    /// Returns optional remediation guidance for this diagnostic.
     pub fn help(&self) -> Option<&str> {
         self.help.as_deref()
     }
-    /// Getter for range field
+
+    /// Returns the source range associated with this diagnostic.
     pub fn range(&self) -> TextRange {
         self.range
     }
-    /// Getter for diagnostic code kind
+
+    /// Returns the broad analysis layer that produced this diagnostic.
     pub fn kind(&self) -> DiagnosticKind {
         self.code.kind()
     }
