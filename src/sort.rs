@@ -23,7 +23,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// Each edge is a tuple `(source, destination)`. For prompt ordering, `source`
 /// is the referenced dependency prompt and `destination` is the prompt that
 /// depends on it.
-pub type DAGAsAdjacencyList<Node> = Vec<(Node, Node)>;
+pub type AdjacencyList<Node> = Vec<(Node, Node)>;
 
 /// A graph data structure used for topological sorting.
 ///
@@ -35,7 +35,7 @@ pub struct Graph<Node> {
     /// All nodes in the graph.
     pub nodes: Vec<Node>,
     /// Directed edges between nodes.
-    pub edges: DAGAsAdjacencyList<Node>,
+    pub edges: AdjacencyList<Node>,
 }
 
 /// Analysis result for a directed graph.
