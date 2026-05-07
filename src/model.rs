@@ -12,7 +12,7 @@
 //!
 //! - [`AchitekFile`] is the recovering model. It is designed for editor and
 //!   diagnostic workflows where the source may be incomplete, malformed, or
-//!   mid-edit. Fields that may be missing are represented with `Option`, and
+//!   mid-edit. Fields that may be missing are represented with [`Option`], and
 //!   recovered values can be wrapped in [`Spanned`] so tools can connect model
 //!   values back to source ranges. Language servers, formatters, documentation
 //!   generators, and rich CLI validation should generally start here.
@@ -32,7 +32,7 @@
 //! should describe Achitek concepts such as blueprints, prompts, prompt types,
 //! defaults, validation rules, and dependency expressions. When a value needs
 //! to point back into source text, prefer crate-owned range types such as
-//! [`super::TextRange`] instead of exposing Tree-sitter nodes directly.
+//! [`TextRange`] instead of exposing Tree-sitter nodes directly.
 
 use super::{
     TextRange,

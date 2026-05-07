@@ -733,9 +733,11 @@ pub enum Severity {
 /// zero-based and `byte` is the zero-based UTF-8 byte offset from the beginning
 /// of that line.
 ///
-/// This type is independent of LSP positions. Language-server consumers should
-/// convert `byte` into the negotiated LSP position encoding before publishing
-/// diagnostics or other ranges to an editor.
+/// This type is independent of [LSP] positions. Language-server consumers
+/// should convert `byte` into the negotiated LSP position encoding before
+/// publishing diagnostics or other ranges to an editor.
+///
+/// [LSP]: https://microsoft.github.io/language-server-protocol/
 ///
 /// # Examples
 ///
