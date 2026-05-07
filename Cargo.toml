@@ -1,6 +1,6 @@
 [package]
 name = "achitekfile"
-authors = ["Samuel Joli <samuel.joli.ftn@gmail.com"]
+authors = ["Samuel Joli <samuel.joli.ftn@gmail.com>"]
 description = "A tree-sitter backed semantic parser for the Achitekfile DSL"
 repository = "https://github.com/achitek-org/achitekfile"
 keywords = ["achitek", "parser", "tree-sitter", "dsl", "diagnostics"]
