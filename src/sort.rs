@@ -327,10 +327,7 @@ pub enum SortError<Node> {
     CycleDetected(Vec<Cycle<Node>>),
 }
 
-impl<Node> std::error::Error for SortError<Node> where
-    Node: core::fmt::Debug + core::fmt::Display
-{
-}
+impl<Node> std::error::Error for SortError<Node> where Node: core::fmt::Debug + core::fmt::Display {}
 
 impl<Node: std::fmt::Display> std::fmt::Display for SortError<Node> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
