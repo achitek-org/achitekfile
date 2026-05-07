@@ -115,9 +115,10 @@ pub fn analyze_graph<Node: std::hash::Hash + Eq + Clone>(
 ///     (8, 9),
 /// ];
 /// let graph: Graph<usize> = Graph { nodes, edges };
-/// let sorted = sort_graph::<usize>(&graph);
+/// let sorted = sort_graph::<usize>(&graph)?;
 ///
-/// assert!(sorted.is_ok());
+/// assert_eq!(sorted.len(), 8);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 pub fn sort_graph<Node: std::hash::Hash + Eq + Clone>(
     graph: &Graph<Node>,
