@@ -19,6 +19,7 @@ use super::{
 use thiserror::Error;
 
 /// A forgiving analysis result for Achitekfile source.
+#[derive(Debug, Clone)]
 pub struct Analysis<'a> {
     source: &'a str,
     file: AchitekFile,
