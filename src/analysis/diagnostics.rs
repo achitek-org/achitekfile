@@ -303,7 +303,7 @@ fn collect_semantic_diagnostics(file: &AchitekFile, diagnostics: &mut Vec<Diagno
 
         if let Some(version) = &blueprint.version
             && !version.value.is_empty()
-            && !is_version_like(&version.value)
+            && !is_three_component_numeric_version(&version.value)
         {
             diagnostics.push(Diagnostic::new(
                 DiagnosticCode::InvalidBlueprintVersion,
@@ -313,7 +313,7 @@ fn collect_semantic_diagnostics(file: &AchitekFile, diagnostics: &mut Vec<Diagno
 
         if let Some(version) = &blueprint.min_achitek_version
             && !version.value.is_empty()
-            && !is_version_like(&version.value)
+            && !is_three_component_numeric_version(&version.value)
         {
             diagnostics.push(Diagnostic::new(
                 DiagnosticCode::InvalidMinimumAchitekVersion,
@@ -662,7 +662,7 @@ fn collect_validation_diagnostics(file: &AchitekFile, diagnostics: &mut Vec<Diag
     }
 }
 
-fn is_version_like(value: &str) -> bool {
+fn is_three_component_numeric_version(value: &str) -> bool {
     let mut parts = value.split('.');
     let Some(major) = parts.next() else {
         return false;

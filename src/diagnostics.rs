@@ -674,9 +674,11 @@ impl DiagnosticCode {
             Self::DuplicateValidateBlock => {
                 Some("Merge validation rules into a single `validate { ... }` block.")
             }
-            Self::InvalidBlueprintVersion => Some("Use a valid version string such as `1.0.0`."),
+            Self::InvalidBlueprintVersion => {
+                Some("Use three numeric version components such as `1.0.0`.")
+            }
             Self::InvalidMinimumAchitekVersion => {
-                Some("Use a valid minimum Achitek version string such as `1.0.0`.")
+                Some("Use three numeric minimum Achitek version components such as `1.0.0`.")
             }
             Self::UnknownDependencyReference => {
                 Some("Reference the name of another prompt declared in this file.")
