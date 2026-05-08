@@ -1,6 +1,5 @@
 use crate::model::{
-    AchitekFile, Blueprint, Prompt, PromptType, Spanned, ValidAchitekFile, ValidBlueprint,
-    ValidPrompt,
+    AchitekFile, Blueprint, Prompt, Spanned, ValidAchitekFile, ValidBlueprint, ValidPrompt,
 };
 
 pub(super) fn validate_file(file: AchitekFile) -> ValidAchitekFile {
@@ -45,7 +44,9 @@ fn validate_prompt(prompt: &Spanned<Prompt>) -> ValidPrompt {
 
     ValidPrompt {
         name: prompt.name.clone(),
-        prompt_type: prompt.prompt_type.unwrap_or(PromptType::String),
+        prompt_type: prompt
+            .prompt_type
+            .expect("analysis should reject prompts without a type"),
         help: prompt.help.clone(),
         choices: prompt.choices.clone(),
         default: prompt.default.clone(),
