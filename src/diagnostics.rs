@@ -1,4 +1,4 @@
-//! **`achitekfile`** violations represented as structured diagnostics.
+//! Structured diagnostics for Achitekfile source violations.
 //!
 //! Diagnostics describe violations found while parsing or analyzing
 //! Achitekfile source. They are intended for user-facing tooling such as
@@ -455,7 +455,7 @@ impl DiagnosticCode {
             | Self::InvalidRegex => DiagnosticKind::Validation,
         }
     }
-    /// Returns the severity of the diagnostic code
+    /// Returns the severity of the diagnostic code.
     pub fn severity(&self) -> Severity {
         match self {
             Self::DuplicateChoice => Severity::Warning,
@@ -463,7 +463,7 @@ impl DiagnosticCode {
             _ => Severity::Error,
         }
     }
-    /// Returns the stable machine-readable code
+    /// Returns the stable machine-readable code.
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::MissingBlueprintBlock => "ACH0000",

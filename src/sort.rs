@@ -318,7 +318,7 @@ fn component_to_cycle<Node: std::hash::Hash + Eq + Clone>(
     }
 }
 
-/// Error returned when a graph cannot be topologically sorted.
+/// Error returned when prompt dependencies cannot be topologically sorted.
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SortError<Node> {
@@ -340,14 +340,14 @@ impl<Node> SortError<Node> {
 
     /// Returns the cyclic regions that prevented topological sorting.
     ///
-    /// See [`sort_graph`] for a complete example.
+    /// See [`crate::model::ValidAchitekFile::prompts_in`] for an example.
     pub fn cycles(&self) -> &[Cycle<Node>] {
         &self.cycles
     }
 
     /// Returns the backtrace captured when the error was created.
     ///
-    /// See [`sort_graph`] for a complete example.
+    /// See [`crate::model::ValidAchitekFile::prompts_in`] for an example.
     pub fn backtrace(&self) -> &Backtrace {
         &self.backtrace
     }
