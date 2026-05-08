@@ -401,9 +401,9 @@ impl ValidAchitekFile {
     ///
     /// # Errors
     ///
-    /// Returns [`crate::SortError`] when dependency ordering is requested and
+    /// Returns [`SortError`] when dependency ordering is requested and
     /// the prompt dependency graph contains a cycle. Use
-    /// [`crate::SortError::cycles`] to inspect the cyclic regions.
+    /// [`SortError::cycles`] to inspect the cyclic regions.
     ///
     /// # Examples
     ///
