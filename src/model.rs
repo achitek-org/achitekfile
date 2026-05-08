@@ -401,8 +401,9 @@ impl ValidAchitekFile {
     ///
     /// # Errors
     ///
-    /// Returns [`SortError::CycleDetected`] when dependency ordering is
-    /// requested and the prompt dependency graph contains a cycle.
+    /// Returns [`SortError`] when dependency ordering is requested and the
+    /// prompt dependency graph contains a cycle. Use [`SortError::cycles`] to
+    /// inspect the cyclic regions.
     ///
     /// # Examples
     ///

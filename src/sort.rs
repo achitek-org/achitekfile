@@ -16,7 +16,10 @@
 //!
 //! Ported and modified from: <https://github.com/TheAlgorithms/Rust/blob/master/src/graph/topological_sort.rs>
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::{
+    backtrace::Backtrace,
+    collections::{HashMap, HashSet, VecDeque},
+};
 
 /// A directed graph represented as an adjacency list of edges.
 ///
@@ -91,16 +94,15 @@ pub fn analyze_graph<Node: std::hash::Hash + Eq + Clone>(
 /// Sorts a graph with [Kahn's algorithm](https://en.wikipedia.org/wiki/Topological_sorting).
 ///
 /// Given a graph, this function returns a vector of nodes in a valid
-/// topological order. If the graph contains a cycle, it returns
-/// [`SortError::CycleDetected`].
+/// topological order or a [`SortError`] when the graph contains a cycle.
 ///
 /// The implementation is deterministic: when multiple nodes are available to
 /// emit, they are considered in the order they appear in [`Graph::nodes`].
 ///
 /// # Errors
 ///
-/// Returns [`SortError::CycleDetected`] if the graph contains one or more
-/// cycles.
+/// Returns [`SortError`] if the graph contains one or more cycles. Use
+/// [`SortError::cycles`] to inspect the cyclic regions.
 ///
 /// # Examples
 ///
@@ -133,7 +135,7 @@ pub fn sort_graph<Node: std::hash::Hash + Eq + Clone>(
     if let Some(sorted) = analysis.sorted {
         Ok(sorted)
     } else {
-        Err(SortError::CycleDetected(analysis.cycles))
+        Err(SortError::cycle_detected(analysis.cycles))
     }
 }
 
@@ -316,37 +318,58 @@ fn component_to_cycle<Node: std::hash::Hash + Eq + Clone>(
     }
 }
 
-/// Errors that can occur during topological sorting.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// Error returned when a graph cannot be topologically sorted.
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum SortError<Node> {
-    /// A cycle was detected in the graph, making topological sorting impossible.
+pub struct SortError<Node> {
+    cycles: Vec<Cycle<Node>>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(skip, default = "std::backtrace::Backtrace::capture")
+    )]
+    backtrace: Backtrace,
+}
+
+impl<Node> SortError<Node> {
+    fn cycle_detected(cycles: Vec<Cycle<Node>>) -> Self {
+        Self {
+            cycles,
+            backtrace: Backtrace::capture(),
+        }
+    }
+
+    /// Returns the cyclic regions that prevented topological sorting.
     ///
-    /// Contains cyclic regions found in the graph.
-    /// When a cycle exists, there is no valid topological ordering of the nodes.
-    CycleDetected(Vec<Cycle<Node>>),
+    /// See [`sort_graph`] for a complete example.
+    pub fn cycles(&self) -> &[Cycle<Node>] {
+        &self.cycles
+    }
+
+    /// Returns the backtrace captured when the error was created.
+    ///
+    /// See [`sort_graph`] for a complete example.
+    pub fn backtrace(&self) -> &Backtrace {
+        &self.backtrace
+    }
 }
 
 impl<Node> std::error::Error for SortError<Node> where Node: core::fmt::Debug + core::fmt::Display {}
 
 impl<Node: std::fmt::Display> std::fmt::Display for SortError<Node> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            SortError::CycleDetected(cycles) => {
-                writeln!(f, "Cycle detected in the following DAG:")?;
-                for cycle in cycles {
-                    writeln!(f, "Cycle nodes:")?;
-                    for node in &cycle.nodes {
-                        write!(f, "{} ", node)?;
-                    }
-                    writeln!(f, "\nEdges:")?;
-                    for (src, dest) in &cycle.edges {
-                        writeln!(f, "  {} -> {}", src, dest)?;
-                    }
-                }
-                Ok(())
+        writeln!(f, "cycle detected in graph")?;
+        for cycle in &self.cycles {
+            writeln!(f, "cycle nodes:")?;
+            for node in &cycle.nodes {
+                write!(f, "{} ", node)?;
+            }
+            writeln!(f, "\nedges:")?;
+            for (src, dest) in &cycle.edges {
+                writeln!(f, "  {} -> {}", src, dest)?;
             }
         }
+
+        write!(f, "backtrace:\n{}", self.backtrace)
     }
 }
 

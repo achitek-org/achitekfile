@@ -16,7 +16,11 @@ use super::{
     model::{AchitekFile, ValidAchitekFile},
     parser::{self, ParseError},
 };
-use thiserror::Error;
+use std::{
+    backtrace::Backtrace,
+    error::Error as StdError,
+    fmt::{Display, Formatter},
+};
 
 /// A forgiving analysis result for Achitekfile source.
 ///
@@ -132,11 +136,69 @@ impl<'a> Analysis<'a> {
 ///
 /// See [`analyze`] for an example of the distinction between fatal analysis
 /// errors and recoverable Achitekfile diagnostics.
-#[derive(Debug, Error)]
-pub enum AnalysisError {
-    /// The source could not be parsed into a Tree-sitter tree.
-    #[error("failed to parse achitekfile source: {0}")]
-    Parse(#[from] ParseError),
+#[derive(Debug)]
+pub struct AnalysisError {
+    kind: AnalysisErrorKind,
+    backtrace: Backtrace,
+}
+
+impl AnalysisError {
+    /// Returns true when analysis failed before parsing completed.
+    ///
+    /// See [`analyze`] for a complete example.
+    pub fn is_parse(&self) -> bool {
+        matches!(self.kind, AnalysisErrorKind::Parse(_))
+    }
+
+    /// Returns the underlying parse error, if parsing failed.
+    ///
+    /// See [`analyze`] for a complete example.
+    pub fn parse_error(&self) -> Option<&ParseError> {
+        match &self.kind {
+            AnalysisErrorKind::Parse(source) => Some(source),
+        }
+    }
+
+    /// Returns the backtrace captured when the error was created.
+    ///
+    /// See [`analyze`] for a complete example.
+    pub fn backtrace(&self) -> &Backtrace {
+        &self.backtrace
+    }
+}
+
+impl From<ParseError> for AnalysisError {
+    fn from(source: ParseError) -> Self {
+        Self {
+            kind: AnalysisErrorKind::Parse(source),
+            backtrace: Backtrace::capture(),
+        }
+    }
+}
+
+impl Display for AnalysisError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self.kind {
+            AnalysisErrorKind::Parse(source) => {
+                writeln!(f, "failed to parse achitekfile source: {source}")?;
+            }
+        }
+
+        write!(f, "backtrace:\n{}", self.backtrace)
+    }
+}
+
+impl StdError for AnalysisError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match &self.kind {
+            AnalysisErrorKind::Parse(source) => Some(source),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum AnalysisErrorKind {
+    Parse(ParseError),
 }
 
 /// Analyzes Achitekfile source and returns a forgiving analysis result.
@@ -147,9 +209,9 @@ pub enum AnalysisError {
 ///
 /// # Errors
 ///
-/// Returns [`AnalysisError::Parse`] if low-level Tree-sitter parsing cannot be
-/// started or does not produce a parse tree. Invalid Achitekfile source is
-/// reported through [`Analysis::diagnostics`] instead of this error type.
+/// Returns [`AnalysisError`] if low-level Tree-sitter parsing cannot be started
+/// or does not produce a parse tree. Invalid Achitekfile source is reported
+/// through [`Analysis::diagnostics`] instead of this error type.
 ///
 /// # Examples
 ///
